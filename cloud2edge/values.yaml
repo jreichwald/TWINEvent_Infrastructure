@@ -1,0 +1,167 @@
+#
+# Copyright (c) 2020, 2021 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+
+demoDevice:
+  tenant: "org.eclipse.packages.c2e"
+  deviceId: "demo-device"
+  password: "demo-secret"
+
+honoConnection:
+  username: "ditto-c2e"
+  password: "verysecret"
+
+# Configuration properties for Eclipse Hono.
+hono:
+
+  livenessProbeInitialDelaySeconds: 900
+  readinessProbeInitialDelaySeconds: 45
+  useLoadBalancer: false
+
+  prometheus:
+    createInstance: false
+
+  grafana:
+    enabled: false
+
+  amqpMessagingNetworkExample:
+    dispatchRouter:
+      resources:
+        requests:
+          cpu: 200m
+    broker:
+      artemis:
+        resources:
+          requests:
+            cpu: 200m
+
+  authServer:
+    extraSecretMounts:
+      permissions:
+        secretName: "permissions"
+        mountPath: "/var/run/hono/auth"
+    hono:
+      auth:
+        svc:
+          permissionsPath: "file:///var/run/hono/auth/permissions.json"
+          supportedSaslMechanisms: "PLAIN"
+          signing:
+            # tokenExpiration contains the number of seconds after which tokens issued
+            # by the Auth server will expire.
+            tokenExpiration: 3600
+
+  deviceRegistryExample:
+    type: mongodb
+    resources:
+      requests:
+        cpu: 200m
+    mongoDBBasedDeviceRegistry:
+      mongodb:
+        host: ditto-mongodb
+        port: 27017
+        dbName: hono
+
+  deviceConnectionService:
+    enabled: true
+
+  adapters:
+    amqp:
+      resources:
+        requests:
+          cpu: 200m
+    http:
+      resources:
+        requests:
+          cpu: 200m
+    mqtt:
+      resources:
+        requests:
+          cpu: 200m
+
+
+# Configuration properties for Eclipse Ditto.
+ditto:
+
+  concierge:
+    resources:
+      requests:
+        cpu: 200m
+      limits:
+        cpu: 1
+        memory: "512Mi"
+
+  connectivity:
+    resources:
+      requests:
+        cpu: 200m
+      limits:
+        cpu: 1
+        memory: "512Mi"
+
+  gateway:
+    resources:
+      requests:
+        cpu: 200m
+      limits:
+        cpu: 1
+        memory: "512Mi"
+
+  nginx:
+    service:
+      type: NodePort
+    resources:
+      requests:
+        cpu: 100m
+      limits:
+        cpu: 250m
+        memory: "64Mi"
+
+  policies:
+    resources:
+      requests:
+        cpu: 200m
+      limits:
+        cpu: 1
+        memory: "512Mi"
+
+  swaggerui:
+    resources:
+      requests:
+        cpu: 100m
+      limits:
+        cpu: 250m
+        memory: "128Mi"
+
+  things:
+    resources:
+      requests:
+        cpu: 200m
+      limits:
+        cpu: 1
+        memory: "512Mi"
+
+  thingsSearch:
+    resources:
+      requests:
+        cpu: 200m
+      limits:
+        cpu: 1
+        memory: "512Mi"
+
+  mongodb:
+    resources:
+      requests:
+        cpu: 250m
+        memory: "256Mi"
+      limits:
+        cpu: 1
+        memory: "512Mi"

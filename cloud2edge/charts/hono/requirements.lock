@@ -1,0 +1,12 @@
+dependencies:
+- name: prometheus
+  repository: https://prometheus-community.github.io/helm-charts
+  version: ~11.7.0
+- name: grafana
+  repository: https://grafana.github.io/helm-charts
+  version: ~3.8.15
+- name: mongodb
+  repository: https://charts.bitnami.com/bitnami
+  version: ~7.14.7
+digest: sha256:d284ee7251b71abe73e7fc021dc92b3afe7c015ddf80c08779c0ccedd74d27a3
+generated: "2021-03-11T02:13:53.130551616-06:00"

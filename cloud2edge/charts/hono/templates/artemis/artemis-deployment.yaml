@@ -1,0 +1,74 @@
+{{- if and .Values.amqpMessagingNetworkExample.enabled ( not .Values.amqpMessagingNetworkExample.broker.servicebus.host ) }}
+#
+# Copyright (c) 2019, 2021 Contributors to the Eclipse Foundation
+#
+# See the NOTICE file(s) distributed with this work for additional
+# information regarding copyright ownership.
+#
+# This program and the accompanying materials are made available under the
+# terms of the Eclipse Public License 2.0 which is available at
+# http://www.eclipse.org/legal/epl-2.0
+#
+# SPDX-License-Identifier: EPL-2.0
+#
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  {{- $args := dict "dot" . "component" "amqp-messaging-network-broker" "name" "artemis" "componentConfig" .Values.amqpMessagingNetworkExample.broker.artemis }}
+  {{- include "hono.metadata" $args | nindent 2 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      {{- include "hono.matchLabels" $args | nindent 6 }}
+  template:
+    metadata:
+      {{- include "hono.metadata" $args | nindent 6 }}
+    spec:
+      containers:
+      - name: apache-activemq-artemis
+        image: {{ .Values.amqpMessagingNetworkExample.broker.artemis.imageName | quote }}
+        command:
+        - /opt/apache-artemis/bin/launch.sh
+        - start
+        env:
+        - name: AMQ_NAME
+          value: custom
+        - name: HOME
+          value: /run/artemis/split-1/
+        - name: JAVA_INITIAL_MEM_RATIO
+          value: "30"
+        - name: JAVA_MAX_MEM_RATIO
+          value: "70"
+        - name: KUBERNETES_NAMESPACE
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.namespace
+        ports:
+        - name: amqps
+          containerPort: 5671
+          protocol: TCP
+        imagePullPolicy: IfNotPresent
+        {{- with .Values.amqpMessagingNetworkExample.broker.artemis.resources }}
+        resources:
+          {{- . | toYaml | nindent 10 }}
+        {{- end }}
+        livenessProbe:
+          initialDelaySeconds: {{ $args.componentConfig.livenessProbeInitialDelaySeconds }}
+          periodSeconds: 9
+          tcpSocket:
+            port: 5671
+          timeoutSeconds: 1
+        readinessProbe:
+          initialDelaySeconds: {{ $args.componentConfig.readinessProbeInitialDelaySeconds }}
+          periodSeconds: 5
+          tcpSocket:
+            port: 5671
+          timeoutSeconds: 1
+        securityContext:
+          privileged: false
+        volumeMounts:
+        {{- include "hono.container.secretVolumeMounts" ( dict "name" $args.name "componentConfig" $args.componentConfig "configMountPath" "/opt/apache-artemis/conf" ) | indent 8 }}
+      volumes:
+      {{- include "hono.pod.secretVolumes" $args | indent 6 }}
+{{- end }}
