@@ -24,13 +24,7 @@ However, functional testing of Hono is done with the most recent version of Kube
 
 #### Helm client
 
-The chart can be installed using Helm versions 2 (2.15 or later) or 3.
-Helm 3 is recommended because it doesn't require installation of any
-additional components to the cluster like Helm 2 did (in particular the
-*Tiller* component).
-
-The command lines used below are based on Helm 3 syntax. Please refer to the Helm 2
-documentation for the corresponding Helm 2 command line parameters.
+The chart can be installed using Helm version 3.1 or later.
 
 ## Installing the chart
 
@@ -253,14 +247,30 @@ The easiest way to set these properties is by means of putting them into a YAML 
 amqpMessagingNetworkExample:
   enabled: false
 
-adapters:
-
-  # mount (existing) Kubernetes secret which contains
-  # credentials for connecting to AMQP network
+# mount (existing) Kubernetes secret which contains
+# credentials for connecting to AMQP network
+# into Command Router and protocol adapter containers 
+commandRouterService:
   extraSecretMounts:
-  - amqpNetwork:
+    amqpNetwork:
       secretName: "my-secret"
       mountPath: "/etc/custom"
+adapters:
+  http:
+    extraSecretMounts:
+      amqpNetwork:
+        secretName: "my-secret"
+        mountPath: "/etc/custom"
+  mqtt:
+    extraSecretMounts:
+      amqpNetwork:
+        secretName: "my-secret"
+        mountPath: "/etc/custom"
+  amqp:
+    extraSecretMounts:
+      amqpNetwork:
+        secretName: "my-secret"
+        mountPath: "/etc/custom"
 
   # provide connection params
   # assuming that "my-secret" contains an "amqp-credentials.properties" file
@@ -353,15 +363,59 @@ In Hono a place is needed where information about the connection status of devic
 This kind of information is used for determining how [command & control](https://www.eclipse.org/hono/docs/concepts/command-and-control/) messages, 
 sent by business applications, can be routed to the protocol adapters that the target devices are connected to.
 
-### Alternative A: Using the deprecated Device Connection API (default)
+### Alternative A: Using the Command Router API (default)
+
+Hono's protocol adapters can use the [Command Router API](https://www.eclipse.org/hono/docs/api/command-router/) to supply
+device connection information with which a Command Router service component can route command & control messages to the
+protocol adapters that the target devices are connected to.
+
+The Command Router API will replace the now deprecated Device Connection API.
+
+#### Example with file-based storage in a persistent volume
+
+The Command Router API is used by default when deploying the Helm chart.
+
+```bash
+helm install --dependency-update -n hono eclipse-hono eclipse-iot/hono 
+```
+
+This will let the Command Router service component use an embedded cache with file-based persistence for the device
+connection data. A persistent volume is required in the Kubernetes cluster for that.
+Note that with this configuration, only one Command Router service component instance can be used. For a storage
+configuration suitable for production, with the possibility to use multiple instances, use the data grid configuration
+as described below.
+
+#### Data Grid based Implementation
+
+The Command Router service component can also be configured to use a data grid for storing the device connection data.
+The Helm chart supports deployment of an example data grid which can be used for experimenting by means of setting the
+*dataGridExample.enabled* property to `true`:
+
+```bash
+helm install --dependency-update -n hono --set dataGridExample.enabled=true eclipse-hono eclipse-iot/hono 
+```
+
+This will deploy the data grid based Command Router service component.
+
+The Command Router service component can also be configured to connect to an already existing data grid. Use the *dataGridSpec*
+property for this.
+
+### Alternative B: Using the deprecated Device Connection API
 
 The [Device Connection API](https://www.eclipse.org/hono/docs/api/device-connection/) defines a service interface
 that protocol adapters can use to store, update and retrieve information about the connection status of devices dynamically during runtime.
 
+The Device Connection API is deprecated and will be replaced by the Command Router API.
+In order to use the Device Connection API, the *useCommandRouter* property has to be set to `false` when deploying the Helm chart.
+
+```bash
+helm install --dependency-update -n hono --set useCommandRouter=false eclipse-hono eclipse-iot/hono 
+```
+
 #### Example Implementation
 
 Hono's example Device Registry component contains a simple in-memory implementation of the Device Connection API.
-This example implementation is used by default when the example registry is deployed.
+This example implementation is used by default when the example registry is deployed and the *useCommandRouter* property is set to `false`.
 
 #### Data Grid based Implementation
 
@@ -374,7 +428,7 @@ The Helm chart supports deployment of an example data grid which can be used for
 *dataGridExample.enabled* property to `true`:
 
 ```bash
-helm install --dependency-update -n hono --set deviceConnectionService.enabled=true --set dataGridExample.enabled=true eclipse-hono eclipse-iot/hono 
+helm install --dependency-update -n hono --set useCommandRouter=false --set deviceConnectionService.enabled=true --set dataGridExample.enabled=true eclipse-hono eclipse-iot/hono 
 ```
 
 This will deploy the data grid based Device Connection service and configure all protocol adapters to use it instead of
@@ -386,40 +440,6 @@ property for this.
 Setting the *deviceConnectionService.enabled* property to `true` and neither setting *dataGridExample.enabled* to `true`
 nor configuring an already existing data grid using the *dataGridSpec* property will result in the Device Connection
 service using an embedded cache for storage. This is a lightweight deployment option but not suitable for production purposes.
-
-### Alternative B: Using the new Command Router API
-
-Hono's protocol adapters can use the [Command Router API](https://www.eclipse.org/hono/docs/api/command-router/) to supply
-device connection information with which a Command Router service component can route command & control messages to the
-protocol adapters that the target devices are connected to.
-
-The Command Router API will replace the now deprecated Device Connection API. The Command Router service component is provided as a tech preview.
-
-#### Example with in-memory storage
-
-In order to use the Command Router API, the *useCommandRouter* property has to be set to `true` when deploying the Helm chart.
-
-```bash
-helm install --dependency-update -n hono --set useCommandRouter=true eclipse-hono eclipse-iot/hono 
-```
-
-This will let the Command Router service component use in-memory storage for the device connection data. This is provided as an example for testing.
-For a storage configuration suitable for production, use the data grid configuration as described below.
-
-#### Data Grid based Implementation
-
-The Command Router service component can also be configured to use a data grid for storing the device connection data.
-The Helm chart supports deployment of an example data grid which can be used for experimenting by means of setting the
-*dataGridExample.enabled* property to `true`:
-
-```bash
-helm install --dependency-update -n hono --set useCommandRouter=true --set dataGridExample.enabled=true eclipse-hono eclipse-iot/hono 
-```
-
-This will deploy the data grid based Command Router service component.
-
-The Command Router service component can also be configured to connect to an already existing data grid. Use the *dataGridSpec*
-property for this.
 
 ## Enabling or disabling Protocol Adapters
 
@@ -443,7 +463,7 @@ The following command will deploy the LoRa adapter along with Hono's standard ad
 helm install --dependency-update -n hono --set adapters.lora.enabled=true eclipse-hono eclipse-iot/hono
 ```
 
-### Jaeger Tracing
+## Jaeger Tracing
 
 Hono's components are instrumented using OpenTracing to allow tracking of the distributed processing of messages flowing through the system.
 The Hono chart can be configured to report tracing information to the [Jaeger tracing system](https://www.jaegertracing.io/).
@@ -474,10 +494,27 @@ If no example Jaeger back end should be deployed but instead an existing Jaeger 
 the chart's *jaegerAgentConf* property can be set to environment variables which are passed in to
 the Jaeger Agent that is deployed with each of Hono's components.
 
+By default, the Jaeger Agent deployed with each of Hono's components is configured to retrieve its sampling strategy
+from the Jaeger back end's *Collector* service. The service loads the strategies from the file that the
+`SAMPLING_STRATEGIES_FILE` environment variable points to. The example Jaeger back end server's environment variables
+can be set via the chart's *jaegerBackendExample.env* property.
+
+By default, the `SAMPLING_STRATEGIES_FILE` variable points to a file which configures all components to sample every span.
+A custom file can be used by creating a Kubernetes secret containing the custom file and then configuring the chart's
+*jaegerBackendExample.extraSecretMounts* property to mount the secret's files into the Jaeger container where it then
+can be used by setting the `SAMPLING_STRATEGIES_FILE` variable accordingly.
+
+Please refer to the [Jaeger documentation](https://www.jaegertracing.io/docs/sampling/#collector-sampling-configuration)
+for details regarding the configuration of the sampling strategies.
+
+Note that usage of the sampling strategy of the Collector service is currently not supported when using the quarkus-native
+Hono images. In that case the Jaeger Agent deployed with each of Hono's components is configured to sample all traces.
+
 ## Using Quarkus based services
 
-The Helm chart can be configured to use Quarkus based images for services that support it. In order to do that, you need to set `honoImagesType` property to 
-`quarkus` or `quarkus-native` values depending on whether you want to use the JVM or the native version of the image.
+The Helm chart can be configured to use Quarkus based images for services that support it. In order to do that, you need
+to set `honoImagesType` property to `quarkus` or `quarkus-native` values depending on whether you want to use the JVM or
+the native version of the image.
 
 Here are the examples for deploying JVM:
 

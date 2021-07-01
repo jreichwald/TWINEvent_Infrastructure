@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2020, 2021 Contributors to the Eclipse Foundation
+# Copyright (c) 2021 Contributors to the Eclipse Foundation
 #
 # See the NOTICE file(s) distributed with this work for additional
 # information regarding copyright ownership.
@@ -10,10 +10,17 @@
 #
 # SPDX-License-Identifier: EPL-2.0
 #
-dependencies:
-  - name: hono
-    version: ~1.8.0
-    repository: "https://eclipse.org/packages/charts/"
-  - name: ditto
-    version: ~2.0.1
-    repository: "https://eclipse.org/packages/charts/"
+
+# profile for installing Hono
+# - without monitoring infrastructure
+# - using Quarkus based native images
+
+useLoadBalancer: false
+
+prometheus:
+  createInstance: false
+
+grafana:
+  enabled: false
+
+honoImagesType: quarkus-native

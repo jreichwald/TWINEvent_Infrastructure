@@ -186,7 +186,7 @@ dataGridExample:
   enabled: false
   # imageName contains the name (including tag)
   # of the container image to use for the example data grid.
-  imageName: infinispan/server:11.0.7.Final-1
+  imageName: infinispan/server:11.0.9.Final-1
   # livenessProbeInitialDelaySeconds contains the value to use for the "initialDelaySeconds"
   # configuration property of the component's liveness probe.
   livenessProbeInitialDelaySeconds: 300
@@ -214,7 +214,7 @@ dataGridExample:
 # the device connection data used for routing of command messages.
 # This property should be set in order to use a storage configuration suitable for production
 # if "dataGridExample.enabled" is set to false (the default).
-# Please refer to https://docs.jboss.org/infinispan/9.4/apidocs/org/infinispan/client/hotrod/configuration/package-summary.html#package.description
+# Please refer to https://docs.jboss.org/infinispan/11.0/apidocs/org/infinispan/client/hotrod/configuration/package-summary.html#package.description
 # for a list of configuration properties.
 dataGridSpec:
   # serverList contains the hostname:port of the data grid node(s)
@@ -236,7 +236,7 @@ jaegerBackendExample:
   enabled: false
   # allInOneImage contains the name (including tag)
   # of the container image to use for the example Jaeger back end.
-  allInOneImage: jaegertracing/all-in-one:1.21
+  allInOneImage: jaegertracing/all-in-one:1.22
   # livenessProbeInitialDelaySeconds contains the value to use for the "initialDelaySeconds"
   # configuration property of the component's liveness probe.
   livenessProbeInitialDelaySeconds: 300
@@ -258,17 +258,39 @@ jaegerBackendExample:
     annotations: {}
     loadBalancerIP:
 
+  # env contains environment variables to set for the Jaeger all-in-one container.
+  # The default variables configure the container to keep up to 100000 traces in memory
+  # and load the default sampling strategies file that comes with the chart.
+  env:
+  - name: MEMORY_MAX_TRACES
+    value: "100000"
+  - name: SAMPLING_STRATEGIES_FILE
+    value: "/etc/hono/default-sampling-strategies.json"
+
+  # extraSecretMounts describes additional secrets that should be mounted into the
+  # container's filesystem. The files from the secret(s) can
+  # then be used in environment variables referring to configuration files etc.
+  # The secrets are expected to exist in the same Kubernetes namespace
+  # as the one that the Jaeger back end has been deployed to.
+  extraSecretMounts: {}
+  #  passwords:
+  #    secretName: "my-passwords"
+  #    mountPath: "/etc/pwd"
+  #  other:
+  #    secretName: "other-stuff"
+  #    mountPath: "/etc/other"
+
 # jaegerAgentImage contains the name (including tag)
 # of the container image to use for the Jaeger Agent sidecar deployed
 # with Hono's components.
-jaegerAgentImage: jaegertracing/jaeger-agent:1.21
+jaegerAgentImage: jaegertracing/jaeger-agent:1.22
 # jaegerAgentConf contains environment variables for configuring the Jaeger Agent sidecar container
 # that is deployed with each of Hono's components.
 # The Jaeger Agent sidecar container is deployed with standard properties if
 # "jaegerBackendExample.enabled" is set to true.
 # Otherwise the sidecar container is deployed using the environment variables contained
 # in this property (if not nil).
-# Please refer to https://www.jaegertracing.io/docs/1.21/cli/ for syntax and semantics
+# Please refer to https://www.jaegertracing.io/docs/1.22/cli/ for syntax and semantics
 # of environment variables.
 jaegerAgentConf:
 #  REPORTER_GRPC_HOST_PORT: my-jaeger-collector:14250
@@ -312,7 +334,7 @@ useLoadBalancer: true
 # messages from the AMQP messaging network to the target protocol adapters.
 # This property is provided for the transition period from the deprecated
 # Device Connection service towards the new Command Router service.
-useCommandRouter: false
+useCommandRouter: true
 
 # Configuration properties for protocol adapters.
 adapters:
@@ -1421,7 +1443,7 @@ deviceConnectionService:
     annotations: {}
 
   # extraSecretMounts describes additional secrets that should be mounted into the
-  # service's' container filesystem. The files from the secret(s) can
+  # service's container filesystem. The files from the secret(s) can
   # then be used in e.g. the configuration of the service's exposed ports.
   # The secrets are expected to exist in the same Kubernetes namespace
   # as the one that the service has been deployed to.
@@ -1457,7 +1479,7 @@ deviceConnectionService:
       # to the data grid that should be used for storing the device connection data.
       # This property MUST be set if "deviceConnectionService.enabled" is set to true
       # and "dataGridExample.enabled" is set to false (the default).
-      # Please refer to https://docs.jboss.org/infinispan/9.4/apidocs/org/infinispan/client/hotrod/configuration/package-summary.html#package.description
+      # Please refer to https://docs.jboss.org/infinispan/11.0/apidocs/org/infinispan/client/hotrod/configuration/package-summary.html#package.description
       # for a list of configuration properties.
       remote:
       #  serverList: hono-data-grid:11222
@@ -1510,6 +1532,12 @@ commandRouterService:
   springLoggingConfig: "classpath:logback-spring.xml"
   # applicationProfiles contains the Spring application profiles that should be activated
   # in the service.
+  # storageClass indicates the name of the kubernetes StorageClass that
+  # should be used for the persistent volume claim used for the storage
+  # of embedded cache data in case the Command Router service doesn't use
+  # a data grid.
+  # If not set, the cluster's default storage class is used.
+  storageClass:
   applicationProfiles: "dev"
   # livenessProbeInitialDelaySeconds contains the value to use for the "initialDelaySeconds"
   # configuration property of the component's liveness probe.
@@ -1529,13 +1557,13 @@ commandRouterService:
       memory: "256Mi"
     limits:
       cpu: "1"
-      memory: "256Mi"
+      memory: "512Mi"
 
   svc:
     annotations: {}
 
   # extraSecretMounts describes additional secrets that should be mounted into the
-  # service's' container filesystem. The files from the secret(s) can
+  # service's container filesystem. The files from the secret(s) can
   # then be used in e.g. the configuration of the service's exposed ports.
   # The secrets are expected to exist in the same Kubernetes namespace
   # as the one that the service has been deployed to.

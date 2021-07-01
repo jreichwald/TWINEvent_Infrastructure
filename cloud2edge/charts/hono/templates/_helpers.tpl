@@ -44,26 +44,36 @@ Create chart name and version as used by the chart label.
   {{- printf "%s-%s" .Chart.Name .Chart.Version | replace "+" "_" | trunc 63 | trimSuffix "-" }}
 {{- end }}
 
+
 {{/*
-Create container image name.
+Adds an element to a Container array.
+Sets "name" and "image" values and adds an "Always" "imagePullPolicy"
+if the image tag contains "SNAPSHOT" and a custom image name
+(not starting with "index.docker.io/eclipse/") is used.
+
 The scope passed in is expected to be a dict with keys
 - (mandatory) "dot": the root (".") scope
+- (mandatory) "name": the value to use as the container's name
 - (mandatory) "componentConfig": a dict with keys
   - (mandatory) "imageName"
   - (optional) "imageTag"
   - (optional) "containerRegistry"
   - (optional) "useImageType": should image type configuration be used
 */}}
-{{- define "hono.image" }}
-  {{- $tag := default .dot.Chart.AppVersion ( default .dot.Values.honoImagesTag .componentConfig.imageTag ) }}
-  {{- $registry := default .dot.Values.honoContainerRegistry .componentConfig.containerRegistry }}
-
-  {{- if and .useImageType ( contains "quarkus" .dot.Values.honoImagesType ) }}
-  {{- printf "%s/%s-%s:%s" $registry .componentConfig.imageName .dot.Values.honoImagesType $tag -}}
-  {{- else }}
-  {{- printf "%s/%s:%s" $registry .componentConfig.imageName $tag -}}
-  {{- end }}
+{{- define "hono.container" }}
+{{- $tag := default .dot.Chart.AppVersion ( default .dot.Values.honoImagesTag .componentConfig.imageTag ) }}
+{{- $registry := default .dot.Values.honoContainerRegistry .componentConfig.containerRegistry }}
+{{- $image := printf "%s/%s:%s" $registry .componentConfig.imageName $tag -}}
+{{- if and .useImageType ( contains "quarkus" .dot.Values.honoImagesType ) }}
+{{- $image = printf "%s/%s-%s:%s" $registry .componentConfig.imageName .dot.Values.honoImagesType $tag -}}
 {{- end }}
+- name: {{ .name | quote }}
+  image: {{ $image | quote }}
+{{- if and ( contains "SNAPSHOT" $tag ) ( not ( hasPrefix "index.docker.io/eclipse/" $image ) ) }}
+  imagePullPolicy: "Always"
+{{- end }}
+{{- end }}
+
 
 {{/*
 Add standard labels for resources as recommended by Helm best practices.
@@ -75,6 +85,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
 app.kubernetes.io/instance: {{ .Release.Name }}
 app.kubernetes.io/version: {{ .Chart.AppVersion }}
 {{- end }}
+
 
 {{/*
 Add standard labels and name for resources as recommended by Helm best practices.
@@ -184,6 +195,22 @@ messaging:
 
 
 {{/*
+Configuration for the clients accessing the example Device Registry.
+The scope passed in is expected to be a dict with keys
+- (mandatory) "dot": the root scope (".") and
+- (mandatory) "component": the name of the component
+*/}}
+{{- define "hono.deviceRegistryExampleClientConfig" -}}
+name: Hono {{ .component }}
+host: {{ .dot.Release.Name }}-service-device-registry
+port: 5671
+credentialsPath: /etc/hono/adapter.credentials
+trustStorePath: /etc/hono/trusted-certs.pem
+hostnameVerificationRequired: false
+{{- end }}
+
+
+{{/*
 Configuration for the service clients of protocol adapters.
 The scope passed in is expected to be a dict with keys
 - (mandatory) "dot": the root scope (".") and
@@ -209,12 +236,7 @@ tenant:
 {{- if .dot.Values.adapters.tenantSpec }}
   {{- .dot.Values.adapters.tenantSpec | toYaml | nindent 2 }}
 {{- else if .dot.Values.deviceRegistryExample.enabled }}
-  name: Hono {{ $adapter }}
-  host: {{ .dot.Release.Name }}-service-device-registry
-  port: 5671
-  credentialsPath: /etc/hono/adapter.credentials
-  trustStorePath: /etc/hono/trusted-certs.pem
-  hostnameVerificationRequired: false
+  {{- include "hono.deviceRegistryExampleClientConfig" ( dict "dot" .dot "component" $adapter ) | nindent 2 }}
 {{- else }}
   {{- required ".Values.adapters.tenantSpec MUST be set if example Device Registry is disabled" .dot.Values.adapters.tenantSpec | toYaml | nindent 2 }}
 {{- end }}
@@ -222,12 +244,7 @@ registration:
 {{- if .dot.Values.adapters.deviceRegistrationSpec }}
   {{- .dot.Values.adapters.deviceRegistrationSpec | toYaml | nindent 2 }}
 {{- else if .dot.Values.deviceRegistryExample.enabled }}
-  name: Hono {{ $adapter }}
-  host: {{ .dot.Release.Name }}-service-device-registry
-  port: 5671
-  credentialsPath: /etc/hono/adapter.credentials
-  trustStorePath: /etc/hono/trusted-certs.pem
-  hostnameVerificationRequired: false
+  {{- include "hono.deviceRegistryExampleClientConfig" ( dict "dot" .dot "component" $adapter ) | nindent 2 }}
 {{- else }}
   {{- required ".Values.adapters.deviceRegistrationSpec MUST be set if example Device Registry is disabled" .dot.Values.adapters.deviceRegistrationSpec | toYaml | nindent 2 }}
 {{- end }}
@@ -235,12 +252,7 @@ credentials:
 {{- if .dot.Values.adapters.credentialsSpec }}
   {{- .dot.Values.adapters.credentialsSpec | toYaml | nindent 2 }}
 {{- else if .dot.Values.deviceRegistryExample.enabled }}
-  name: Hono {{ $adapter }}
-  host: {{ .dot.Release.Name }}-service-device-registry
-  port: 5671
-  credentialsPath: /etc/hono/adapter.credentials
-  trustStorePath: /etc/hono/trusted-certs.pem
-  hostnameVerificationRequired: false
+  {{- include "hono.deviceRegistryExampleClientConfig" ( dict "dot" .dot "component" $adapter ) | nindent 2 }}
 {{- else }}
   {{- required ".Values.adapters.credentialsSpec MUST be set if example Device Registry is disabled" .dot.Values.adapters.credentialsSpec | toYaml | nindent 2 }}
 {{- end }}
@@ -295,12 +307,12 @@ deviceConnection:
 {{- end }}
 {{- end }}
 {{- if .dot.Values.prometheus.createInstance }}
-resource-limits:
-  prometheus-based:
+resourceLimits:
+  prometheusBased:
     host: {{ template "hono.prometheus.server.fullname" .dot }}
 {{- else if .dot.Values.prometheus.host }}
-resource-limits:
-  prometheus-based:
+resourceLimits:
+  prometheusBased:
     host: {{ .dot.Values.prometheus.host }}
     port: {{ default "9090" .dot.Values.prometheus.port }}
 {{- end }}
@@ -339,6 +351,8 @@ The scope passed in is expected to be a dict with keys
 {{- define "hono.quarkusConfig" -}}
 {{- if ( contains "quarkus" .dot.Values.honoImagesType ) }}
 quarkus:
+  jaeger:
+    service-name: {{ printf "%s-%s" .dot.Release.Name .component | quote }}
   log:
     console:
       color: true
@@ -392,10 +406,13 @@ Adds a Jaeger Agent container to a template spec.
   - name: agent-configs
     containerPort: 5778
     protocol: TCP
+  - name: admin-http
+    containerPort: 14271
+    protocol: TCP
   readinessProbe:
     httpGet:
       path: "/"
-      port: 14271
+      port: admin-http
     initialDelaySeconds: 5
   env:
   {{- if .Values.jaegerBackendExample.enabled }}
@@ -420,14 +437,15 @@ The scope passed in is expected to be a dict with keys
 */}}
 {{- define "hono.jaeger.clientConf" }}
 {{- $agentHost := printf "%s-jaeger-agent" .dot.Release.Name }}
+{{/* Note that for quarkus containers, the "quarkus.jaeger.service-name" property needs to be set instead, see https://github.com/quarkusio/quarkus/issues/17400 */}}
 - name: JAEGER_SERVICE_NAME
-  value: {{ printf "%s-%s" .dot.Release.Name .name | quote }}
-{{- if .dot.Values.jaegerBackendExample.enabled }}
+  value: {{ printf "%s-%s" .dot.Release.Name .component | quote }}
+{{- if and .dot.Values.jaegerBackendExample.enabled ( eq .dot.Values.honoImagesType "quarkus-native" ) }}
 - name: JAEGER_SAMPLER_TYPE
   value: "const"
 - name: JAEGER_SAMPLER_PARAM
   value: "1"
-{{- else if empty .dot.Values.jaegerAgentConf }}
+{{- else if and ( not .dot.Values.jaegerBackendExample.enabled ) ( empty .dot.Values.jaegerAgentConf ) }}
 - name: JAEGER_SAMPLER_TYPE
   value: "const"
 - name: JAEGER_SAMPLER_PARAM
