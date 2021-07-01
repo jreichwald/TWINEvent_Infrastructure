@@ -14,7 +14,7 @@ maintainers:
 - email: kai.hudalla@bosch.io
   name: sophokles73
 - email: thomas.jaeckle@bosch.io
-  name: blavla
+  name: thjaeckle
 name: cloud2edge
 sources:
 - https://github.com/eclipse/packages/packages/cloud2edge/
