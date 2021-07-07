@@ -1,0 +1,39 @@
+enableAES: false 
+replicaCount: 1
+image: 
+  repository: docker.io/datawire/ambassador 
+service: 
+  ports:
+    - name: mqtt-adapter 
+      port: 1883 
+      targetPort: 1883
+    - name: mqtts-adapter 
+      port: 8883 
+      targetPort: 8883
+    - name: http-adapter 
+      port: 18080 
+      targetPort: 18080
+    - name: https-adapter 
+      port: 18443 
+      targetPort: 18443
+    - name: device-registry 
+      port: 28443
+      targetPort: 28443
+    - name: devices-reg
+      port: 28443
+      targetPort: 28443   
+    - name: dispatch-router
+      port: 15672
+      targetPort: 15672
+    - name: dispatchs-rou
+      port: 15671
+      targetPort: 15671   
+    - name: ditto 
+      port: 38443 
+      targetPort: 38443
+    - name: amqps-adapter
+      port: 5671
+      targetPort: 5671
+    - name: amqp-adapter
+      port: 5672
+      targetPort: 5672

@@ -1,0 +1,98 @@
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name: ambassador-http-adapter
+  namespace: ambassador
+spec:
+  port: 18089
+  service: c2e-adapter-http-vertx.cloud2edge:8089
+---
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name: ambassador-https-adapter
+  namespace: ambassador
+spec:
+  port: 18443
+  service: c2e-adapter-http-vertx.cloud2edge:8080
+---  
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name: ambassador-mqtt-adapter
+  namespace: ambassador
+spec:
+  port: 1889
+  service: c2e-adapter-mqtt-vertx.cloud2edge:1889
+---  
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name: ambassador-mqtts-adapter
+  namespace: ambassador
+spec:
+  port: 8883
+  service: c2e-adapter-mqtt-vertx.cloud2edge:1883
+---
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name: ambassador-device-registry
+  namespace: ambassador
+spec:
+  port: 28089
+  service: c2e-service-device-registry-ext.cloud2edge:28089
+---
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name: ambassador-devices-reg
+  namespace: ambassador
+spec:
+  port: 28443
+  service: c2e-service-device-registry-ext.cloud2edge:28080
+---
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name: ambassador-ditto
+  namespace: ambassador
+spec:
+  port: 38443
+  service: c2e-ditto-nginx.cloud2edge:8080
+---
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name: ambassador-dispatch-router
+  namespace: ambassador
+spec:
+  port: 15679
+  service: c2e-dispatch-router-ext.cloud2edge:15679
+---
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name: ambassador-dispatchs-rou
+  namespace: ambassador
+spec:
+  port: 15671
+  service: c2e-dispatch-router-ext.cloud2edge:15672
+---
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name: ambassador-amqps-adapter
+  namespace: ambassador
+spec:
+  port: 5671
+  service: c2e-service-auth.cloud2edge:5672
+---
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name: ambassador-amqp-adapter
+  namespace: ambassador
+spec:
+  port: 5679
+  service: c2e-service-auth.cloud2edge:5679

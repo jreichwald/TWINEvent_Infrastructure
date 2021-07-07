@@ -6,5 +6,6 @@
 
 ## Repo Components 
 * Cloud2Edge Helm Chart
+* Ambassador Mappings of IT-Infrastructure
 * REST API templates for testing purposes
 
