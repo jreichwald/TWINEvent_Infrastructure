@@ -747,3 +747,49 @@ curl -i -X POST -u devops:foobar -H 'Content-Type: application/json' --data '{
         }
       }
     }' http://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
+
+
+####
+
+POST http://141.19.44.65:38443/api/2/things/lehmann:smartDTsensor/inbox/messages/backlightOn?timeout=0
+Content-Type: x-correlation-id: command-and-control
+Authorization: Basic ditto:ditto
+
+{
+  
+}
+
+####
+
+POST http://141.19.44.65:38443/api/2/things/lehmann:smartDTsensor/inbox/messages/backlightOff?timeout=0
+Content-Type: x-correlation-id: command-and-control
+Authorization: Basic ditto:ditto
+
+{
+  
+}
+
+####
+
+
+    curl -i -X POST 'http://141.19.44.65:38443/api/2/things/lehmann:smartDTsensor/inbox/messages/brew?timeout=0' \
+     -u ditto:ditto \
+     -H 'x-correlation-id: command-and-control' \
+     -d '{"targetTemperature":85}'
+
+
+
+#####
+
+curl -i -X POST -u ditto:ditto -H 'Content-Type: application/json' -w '\n' --data '{
+    "topic": "lehmann/smartDTsensor/things/live/messages/ask",
+    "headers": {
+        "content-type": "text/plain",
+        "correlation-id": "a-unique-string-for-this-message"
+    },
+    "path": "/inbox/messages/ask",
+    "value": "Hey, how are you?"
+}' http://141.19.44.65:38443/api/2/things/lehmann:smartDTsensor/inbox/messages/turnoff?timeout=0
+
+
+####
