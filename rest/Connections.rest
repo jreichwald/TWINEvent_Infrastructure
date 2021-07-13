@@ -1,0 +1,204 @@
+@proto = http
+@hostname = twinserver.kve.hs-mannheim.de 
+@dittoport = 38443
+@dittodevopsusr = devops
+@dittodevopspwd = foo
+
+########################################################################################
+### Establish AMQP 901 Connection for Telemetry ########################################
+########################################################################################
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity?timeout=8s
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+  "targetActorSelection": "/system/sharding/connection",
+  "headers": {
+    "aggregate": false
+  },
+  "piggybackCommand": {
+    "type": "connectivity.commands:createConnection",
+    "connection": {
+      "id": "rabbit-mq-connection-901-telemetry",
+      "connectionType": "amqp-091",
+      "connectionStatus": "open",
+      "uri": "amqp://ditto:admin1234@mq.jreichwald.de:5672",
+      "failoverEnabled": true,
+      "targets": [
+        { 
+          "address": "events/twin",
+          "topics": [
+            "_/_/things/twin/events"
+          ],
+          "authorizationContext": [
+                "pre-authenticated:hono-connection"
+              ] 
+        } 
+      ],
+      "mappingContext": {
+                "mappingEngine": "JavaScript",
+                "options": {
+                    "outgoingScript": "function mapFromDittoProtocolMsg(_namespace,_name,group,channel,criterion,action,path,dittoHeaders,val,status,extra) {let headers=dittoHeaders; let textPayload=JSON.stringify({namespace: _namespace, device: _name, property: path, value: val,timestamp: Date.now()}); let bytePayload=null; let contentType='application/vnd.eclipse.ditto+json'; return Ditto.buildExternalMsg(headers,textPayload,bytePayload,contentType);}"
+                }
+            }
+    }
+  }
+}
+
+########################################################################################
+### Establish AMQP 901 Connection for New Devices ######################################
+########################################################################################
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity?timeout=8s
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+  "targetActorSelection": "/system/sharding/connection",
+  "headers": {
+    "aggregate": false
+  },
+  "piggybackCommand": {
+    "type": "connectivity.commands:createConnection",
+    "connection": {
+      "id": "rabbit-mq-connection-901-devices",
+      "connectionType": "amqp-091",
+      "connectionStatus": "open",
+      "uri": "amqp://ditto:admin1234@mq.jreichwald.de:5672",
+      "failoverEnabled": true,
+      "targets": [
+        { 
+          "address": "newtwin/twin",
+          "topics": [
+            "_/_/things/twin/events"
+          ],
+          "authorizationContext": [
+                "pre-authenticated:hono-connection"
+              ] 
+        } 
+      ],
+      "mappingContext": {
+                "mappingEngine": "JavaScript",
+                "options": {
+                    "outgoingScript": "function mapFromDittoProtocolMsg(  namespace,  name,  group,  channel,  criterion,  action,  path,  dittoHeaders,  val,  status,  extra) {  let headers = dittoHeaders;  let textPayload = JSON.stringify({device: namespace + ':' + name, value: val});  let bytePayload = null;  let contentType = 'application/vnd.eclipse.ditto+json'; if (action == 'modified' && path == '/features'){return Ditto.buildExternalMsg(    headers,     textPayload,    bytePayload,     contentType   );}else return false;}"
+                }
+            }
+    }
+  }
+}
+
+########################################################################################
+### Establish MQTT Connection ##########################################################
+########################################################################################
+
+POST http://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+    "targetActorSelection": "/system/sharding/connection",
+    "headers": {
+    	"aggregate": false
+    },
+    "piggybackCommand": {
+        "type": "connectivity.commands:createConnection",
+        "connection": {
+            "id": "mqtt-example-connection",
+            "connectionType": "mqtt",
+            "connectionStatus": "open",
+            "failoverEnabled": true,
+            "uri": "tcp://dbt:dbt@mq.jreichwald.de:1883",
+            "sources": [{
+                "addresses": ["ditto-tutorial/#"],
+                "authorizationContext": ["nginx:ditto"],
+                "qos": 0,
+                "filters": []
+            }],
+            "targets": [{
+                "address": "ditto-tutorial/{{ thing:id }}",
+                "topics": [
+                "_/_/things/twin/events",
+                "_/_/things/live/messages"
+                ],
+                "authorizationContext": ["nginx:ditto"],
+                "qos": 0
+            }]
+        }
+    }
+}
+
+########################################################################################
+### Delete Connection ##################################################################
+########################################################################################
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+  "targetActorSelection": "/system/sharding/connection",
+  "headers": {
+    "aggregate": false
+  },
+  "piggybackCommand": {
+    "type": "connectivity.commands:deleteConnection",
+    "connectionId": "rabbit-mq-connection-901-devices"
+  }
+}
+
+########################################################################################
+### RETRIEVE CONNECTION METRICS ########################################################
+########################################################################################
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity?timeout=8s
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+  "targetActorSelection": "/system/sharding/connection",
+  "headers": {
+    "aggregate": false
+  },
+  "piggybackCommand": {
+    "type": "connectivity.commands:retrieveConnectionMetrics",
+    "connectionId": "rabbit-mq-connection-901"
+  }
+}
+
+########################################################################################
+### TEST CONNECTION STATUS #############################################################
+########################################################################################
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity?timeout=8s
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+  "targetActorSelection": "/system/sharding/connection",
+  "headers": {
+    "aggregate": false
+  },
+  "piggybackCommand": {
+    "type": "connectivity.commands:retrieveConnectionStatus",
+    "connectionId": "rabbit-mq-connection-901"
+  }
+}
+
+########################################################################################
+### DISCOVBER ALL CONNECTIONS IDs ######################################################
+########################################################################################
+
+POST http://twinserver.kve.hs-mannheim.de:38443/devops/piggyback/connectivity
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+  "targetActorSelection": "/user/connectivityRoot/connectionIdsRetrieval/singleton",
+  "headers": {
+    "aggregate": false
+  },
+  "piggybackCommand": {
+    "type": "connectivity.commands:retrieveAllConnectionIds"
+  }
+}

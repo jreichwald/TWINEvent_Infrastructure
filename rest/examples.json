@@ -1,0 +1,69 @@
+{
+	"topic": "smart/DTsensor/things/twin/events/modified",
+	"path": "/features/telemetry/properties/JoelTemp/value",
+	"headers": {
+		"response-required": false,
+		"ditto-originator": "pre-authenticated:hono-connection",
+		"correlation-id": "3dc30970-d3b8-4f1e-8dce-6aa1a6727d12",
+		"content-type": "application/vnd.eclipse.ditto+json",
+		"hono-device-id": "smart:DTsensor",
+		"version": 2,
+		"requested-acks": []
+	},
+	"value": 21
+}
+
+// TELEMETRY
+
+{
+    "namespace":"smart",
+    "device":"DTsensor",
+    "property":"/features/telemetry/properties/JoelTemp/value",
+    "value":22,
+    "timestamp":1626185585334
+}
+
+// NEWTWIN
+
+{
+	"topic": "KVE/smartDTsensor2/things/twin/events/modified",
+	"path": "/features",
+	"headers": {
+		"correlation-id": "6b42cf65-5196-425f-a37d-308b1076c66b",
+		"authorization": "Basic ZGl0dG86ZGl0dG8=",
+		"x-real-ip": "10.1.192.105",
+		"x-ditto-pre-authenticated": "nginx:ditto",
+		"host": "twinserver.kve.hs-mannheim.de:38443",
+		"x-forwarded-for": "10.1.192.105",
+		"accept-encoding": "identity, chunked;q=0.1, *;q=0.0",
+		"x-forwared-user": "ditto",
+		"user-agent": "ESP8266HTTPClient",
+		"ditto-originator": "nginx:ditto",
+		"response-required": false,
+		"version": 2,
+		"requested-acks": [],
+		"content-type": "application/json"
+	},
+	"value": {
+		"telemetry": {
+			"properties": {
+				"JoelTemp": {
+					"value": null,
+					"unit": "Celsius"
+				},
+				"JoelHum": {
+					"value": null,
+					"unit": "Celsius"
+				},
+				"JoelPress": {
+					"value": null,
+					"unit": "hPa"
+				},
+				"JoelCO2": {
+					"value": null,
+					"unit": "ppm"
+				}
+			}
+		}
+	}
+}

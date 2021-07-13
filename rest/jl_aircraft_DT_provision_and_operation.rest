@@ -12,7 +12,7 @@
 @devregport = 28443
 @dittoport = 38443
 @dittodevopsusr = devops
-@dittodevopspwd = foobar
+@dittodevopspwd = foo
 
 ########################################################################################
 ### Create Tenant ######################################################################
@@ -604,7 +604,7 @@ Content-Type: application/json
   },
   "piggybackCommand": {
     "type": "connectivity.commands:deleteConnection",
-    "connectionId": "hono-connection-for-joel"
+    "connectionId": "mqtt-example-connection"
   }
 }
 
@@ -793,3 +793,147 @@ curl -i -X POST -u ditto:ditto -H 'Content-Type: application/json' -w '\n' --dat
 
 
 ####
+
+
+GET http://jreichwald.de:1880/settings
+Authorization: Basic admin:admin1234
+
+{
+  
+}
+
+#### Test login scheme
+
+GET http://jreichwald.de:1880/auth/login
+
+### login
+
+curl -X POST http://jreichwald.de:1880/auth/token --data 'client_id=node-red-admin&grant_type=password&scope=*&username=admin&password=admin1234'
+
+### login
+
+
+POST http://twinserver.kve.hs-mannheim.de:18443/auth/token 
+Content-Type: application/x-www-form-urlencoded
+
+client_id=node-red-admin&grant_type=password&scope=*&username=admin&password=admin1234
+
+
+#Content-Type: client_id=node-red-admin&grant_type=password&scope=*&username=admin&password=admin1234
+
+### Token
+
+@NodeRedToken = JUSZpHtMzNnVoa0j9AhlOGwxCEcxx0vFyF/ZunzurXvfsNL9B/Sd9qdY5cz66FreJPei8/f4p2L1CozdD20mLzG7UEGWVvJV/oduvWC7QZBZPRQCvmCW6d+AMQQb/tGoB/wn4E3oaLCNT/tWgN2qi9/igCVGcOs1458IK9hUVJU=
+
+###
+
+GET http://jreichwald.de:1880/settings
+Authorization: Bearer {{NodeRedToken}}
+
+####
+
+PUT http://twinserver.kve.hs-mannheim.de:18443/flow/a1cabdb9.dfa9b
+Authorization: Bearer {{NodeRedToken}}
+Content-Type: application/json
+Node-RED-Deployment-Type: reload
+
+{
+  "id": "a1cabdb9.dfa9b",
+  "label": "Flow 1",
+  "nodes": [ 
+  {
+        "id": "jo9aa7f7.8b39b8",
+        "type": "inject",
+        "z": "a1cabdb9.dfa9b",
+        "repeat": "10",
+        "payloadType": "date",
+        "x": 130,
+        "y": 80,
+        "wires": [
+            [
+                "jof970af.305cf8"
+            ]
+        ]
+    },
+    {
+        "id": "jof970af.305cf8",
+        "type": "http request",
+        "z": "a1cabdb9.dfa9b",
+        "method": "GET",
+        "url": "http://ditto:ditto@twinserver.kve.hs-mannheim.de:38443/api/2/things/selfy:smsensor/features/telemetry/properties/JoelTemp/value",
+        "x": 330,
+        "y": 80,
+        "wires": [
+            [
+                "jodf7460.349a"
+            ]
+        ]
+    },
+    {
+        "id": "jodf7460.349a",
+        "type": "rbe",
+        "z": "a1cabdb9.dfa9b",
+        "func": "deadband",
+        "gap": "1",
+        "inout": "out",
+        "property": "payload",
+        "x": 530,
+        "y": 80
+    }
+  ]
+}
+
+
+###PUT .../flow/:8f85aefb.b740d8
+
+curl -X POST http://twinserver.kve.hs-mannheim.de:18443/flows -H 'content-type: application/json' -H "Authorization: Bearer {{NodeRedToken}}" -d '{
+  "id": "8f85aefb.b740d8",
+  "label": "Flow 1",
+  "nodes": [ 
+  {
+        "id": "jo9aa7f7.8b39b8",
+        "type": "inject",
+        "z": "8f85aefb.b740d8",
+        "repeat": "10",
+        "payloadType": "date",
+        "x": 130,
+        "y": 80,
+        "wires": [
+            [
+                "jof970af.305cf8"
+            ]
+        ]
+    },
+    {
+        "id": "jof970af.305cf8",
+        "type": "http request",
+        "z": "8f85aefb.b740d8",
+        "method": "GET",
+        "url": "http://ditto:ditto@twinserver.kve.hs-mannheim.de:38443/api/2/things/selfy:smsensor/features/telemetry/properties/JoelTemp/value",
+        "x": 330,
+        "y": 80,
+        "wires": [
+            [
+                "jodf7460.349a"
+            ]
+        ]
+    },
+    {
+        "id": "jodf7460.349a",
+        "type": "rbe",
+        "z": "8f85aefb.b740d8",
+        "func": "deadband",
+        "gap": "1",
+        "inout": "out",
+        "property": "payload",
+        "x": 530,
+        "y": 80
+    }
+  ]
+}
+'
+
+
+#####################################################################################
+
+curl -X GET http://twinserver.kve.hs-mannheim.de:18443/flows -H 'content-type: application/json' -H "Authorization: Bearer {{NodeRedToken}}"
