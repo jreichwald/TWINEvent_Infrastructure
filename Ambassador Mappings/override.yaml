@@ -17,11 +17,11 @@ service:
       port: 18443 
       targetPort: 18443
     - name: device-registry 
-      port: 28443
-      targetPort: 28443
+      port: 28089
+      targetPort: 28089
     - name: devices-reg
       port: 28443
-      targetPort: 28443   
+      targetPort: 28443  
     - name: dispatch-router
       port: 15672
       targetPort: 15672
@@ -37,3 +37,6 @@ service:
     - name: amqp-adapter
       port: 5672
       targetPort: 5672
+    - name: node-red
+      port: 1880
+      targetPort: 1880

@@ -13,7 +13,7 @@ metadata:
   name: ambassador-https-adapter
   namespace: ambassador
 spec:
-  port: 18443
+  port: 18448
   service: c2e-adapter-http-vertx.cloud2edge:8080
 ---  
 apiVersion: getambassador.io/v2
@@ -96,3 +96,12 @@ metadata:
 spec:
   port: 5679
   service: c2e-service-auth.cloud2edge:5679
+---
+apiVersion: getambassador.io/v2
+kind:  TCPMapping
+metadata:
+  name: ambassador-node-red
+  namespace: ambassador
+spec:
+  port: 18443
+  service: twinnodered.node-red:1880  
