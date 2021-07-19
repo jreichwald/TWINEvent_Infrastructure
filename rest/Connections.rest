@@ -104,26 +104,24 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
     "piggybackCommand": {
         "type": "connectivity.commands:createConnection",
         "connection": {
-            "id": "mqtt-example-connection",
+            "id": "rabbit-mq-connection-mqtt",
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,
-            "uri": "tcp://dbt:dbt@mq.jreichwald.de:1883",
-            "sources": [{
-                "addresses": ["ditto-tutorial/#"],
-                "authorizationContext": ["nginx:ditto"],
-                "qos": 0,
-                "filters": []
-            }],
-            "targets": [{
-                "address": "ditto-tutorial/{{ thing:id }}",
+            "uri": "tcp://ditto:admin1234@mq.jreichwald.de:1883",
+            "sources": [],
+            "targets": [
+              { 
+                "address": "/twin",
+                "qos": 2,
                 "topics": [
-                "_/_/things/twin/events",
-                "_/_/things/live/messages"
+                  "_/_/things/twin/events"
                 ],
-                "authorizationContext": ["nginx:ditto"],
-                "qos": 0
-            }]
+                "authorizationContext": [
+                      "pre-authenticated:hono-connection"
+                    ] 
+              } 
+            ]
         }
     }
 }
