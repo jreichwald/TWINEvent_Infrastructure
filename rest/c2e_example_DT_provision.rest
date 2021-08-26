@@ -254,3 +254,74 @@ Authorization: Basic demo-device@org.eclipse.packages.c2e:demo-secret
   "path": "/features/humidity/properties/value",
   "value": 999
 }
+
+### JSON Protocol message
+POST {{proto}}://{{hostname}}:38443/api/2/things/HSMA:smartDTsensorbl/inbox/messages/Z?timeout=0
+Content-Type: application/json
+Authorization: Basic ditto:ditto
+
+{"value": "ON"}
+
+
+###
+
+curl --request POST \
+  --url http://localhost:8080/api/2/things/org.eclipse.ditto:smartcoffee/inbox/messages/ask \
+  --header 'content-type: text/plain' \
+  --header 'Authorization: Basic ZGl0dG86ZGl0dG8=' \
+  --data 'Hey, how are you?'
+
+###
+
+POST {{proto}}://{{hostname}}:38443/api/2/things/HSMA:smartDTsensorbl/inbox/messages/hallo?timeout=0
+Content-Type: text/plain
+Authorization: Basic ditto:ditto
+
+Hallo Welt
+
+###
+
+{
+	"topic": "HSMA/smartDTsensorbl/things/live/messages/hallo",
+	"headers": {
+		"version": 2,
+		"authorization": "Basic ZGl0dG86ZGl0dG8=",
+		"x-real-ip": "10.1.192.107",
+		"x-ditto-pre-authenticated": "nginx:ditto",
+		"host": "141.19.44.65:38443",
+		"x-forwarded-for": "10.1.192.107",
+		"accept-encoding": "gzip, deflate",
+		"x-forwared-user": "ditto",
+		"user-agent": "vscode-restclient",
+		"timeout": "0",
+		"requested-acks": [],
+		"response-required": false,
+		"ditto-originator": "nginx:ditto",
+		"ditto-message-direction": "TO",
+		"ditto-message-subject": "hallo",
+		"ditto-message-thing-id": "HSMA:smartDTsensorbl",
+		"correlation-id": "86ff9f01-9dfd-4932-80d1-b7fbdeb79561",
+		"content-type": "text/plain",
+		"timestamp": "2021-08-26T15:17:02.087130267+02:00"
+	},
+	"path": "/inbox/messages/hallo",
+	"value": "Hallo Welt"
+}
+
+###
+
+{
+	"topic": "HSMA/smartDTsensorbl/things/live/messages/hallo",
+	"headers": {
+		"requested-acks": [],
+		"ditto-originator": "nginx:ditto",
+		"content-type": "text/plain",
+		"response-required": false,
+		"correlation-id": "a-unique-string-for-this-message",
+		"ditto-message-thing-id": "HSMA:smartDTsensorbl",
+		"ditto-message-subject": "hallo",
+		"ditto-message-direction": "TO"
+	},
+	"path": "/inbox/messages/hallo",
+	"value": "Hallo Welt!"
+}

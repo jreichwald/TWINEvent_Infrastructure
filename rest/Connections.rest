@@ -109,12 +109,20 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
             "connectionStatus": "open",
             "failoverEnabled": true,
             "uri": "tcp://ditto:admin1234@mq.jreichwald.de:1883",
-            "sources": [],
+            "sources": [
+              {
+                "addresses": [
+                  "/CMD/#"
+                ],
+                "authorizationContext": ["nginx:ditto"],
+                "qos": 2
+              }
+            ],
             "targets": [
               { 
                 "address": "/twin",
                 "qos": 2,
-                "topics": [
+                "topics": [ 
                   "_/_/things/twin/events"
                 ],
                 "authorizationContext": [
@@ -141,7 +149,7 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
   },
   "piggybackCommand": {
     "type": "connectivity.commands:deleteConnection",
-    "connectionId": "rabbit-mq-connection-901-devices"
+    "connectionId": "rabbit-mq-connection-mqtt"
   }
 }
 
