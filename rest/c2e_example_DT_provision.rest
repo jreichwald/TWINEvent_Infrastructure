@@ -256,7 +256,7 @@ Authorization: Basic demo-device@org.eclipse.packages.c2e:demo-secret
 }
 
 ### JSON Protocol message
-POST {{proto}}://{{hostname}}:38443/api/2/things/HSMA:smartDTsensorbl/inbox/messages/Z?timeout=0
+POST {{proto}}://{{hostname}}:38443/api/2/things/HSMA:smartDTsensorb/inbox/messages/Z?timeout=0
 Content-Type: application/json
 Authorization: Basic ditto:ditto
 
@@ -273,7 +273,7 @@ curl --request POST \
 
 ###
 
-POST {{proto}}://{{hostname}}:38443/api/2/things/HSMA:smartDTsensorbl/inbox/messages/hallo?timeout=0
+POST {{proto}}://{{hostname}}:38443/api/2/things/HSMA:smartDTsensorb/inbox/messages/backlightOff?timeout=0
 Content-Type: text/plain
 Authorization: Basic ditto:ditto
 

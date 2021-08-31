@@ -89,7 +89,7 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
 }
 
 ########################################################################################
-### Establish MQTT Connection ##########################################################
+### Establish MQTT Connection Julian ###################################################
 ########################################################################################
 
 POST http://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
@@ -135,6 +135,52 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
 }
 
 ########################################################################################
+### Establish MQTT Connection Mosquitto ################################################
+########################################################################################
+
+POST http://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+    "targetActorSelection": "/system/sharding/connection",
+    "headers": {
+    	"aggregate": false
+    },
+    "piggybackCommand": {
+        "type": "connectivity.commands:createConnection",
+        "connection": {
+            "id": "mosquitto-connection-mqtt",
+            "connectionType": "mqtt",
+            "connectionStatus": "open",
+            "failoverEnabled": true,
+            "uri": "tcp://test.mosquitto.org:1883",
+            "sources": [
+              {
+                "addresses": [
+                  "/CMD/#"
+                ],
+                "authorizationContext": ["nginx:ditto"],
+                "qos": 2
+              }
+            ],
+            "targets": [
+              { 
+                "address": "/twin",
+                "qos": 2,
+                "topics": [ 
+                  "_/_/things/twin/events"
+                ],
+                "authorizationContext": [
+                      "pre-authenticated:hono-connection"
+                    ] 
+              } 
+            ]
+        }
+    }
+}
+
+########################################################################################
 ### Delete Connection ##################################################################
 ########################################################################################
 
@@ -149,7 +195,7 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
   },
   "piggybackCommand": {
     "type": "connectivity.commands:deleteConnection",
-    "connectionId": "rabbit-mq-connection-mqtt"
+    "connectionId": "hono-connection-for-HSMA"
   }
 }
 
@@ -168,7 +214,7 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
   },
   "piggybackCommand": {
     "type": "connectivity.commands:retrieveConnectionMetrics",
-    "connectionId": "rabbit-mq-connection-901"
+    "connectionId": "hono-connection-for-HSMA"
   }
 }
 
