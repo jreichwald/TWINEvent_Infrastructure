@@ -1,11 +1,11 @@
 @proto = http
 @hostname = 141.19.44.65 
 @user = ditto
-@honodevice = rf4
-@org = org.fournier
-@honotenant = aircraft
-@honodevicepwd = flugzeug
-@manufacturer = org.fournier
+@honodevice = yumi
+@org = abb
+@honotenant = abb
+@honodevicepwd = sehrgeheim
+@manufacturer = abb
 @pwd = ditto
 @port = 38443
 @httpadapterport = 18443
@@ -55,7 +55,7 @@ curl -i -X POST -u devops:foobar -H 'Content-Type: application/json' --data '{
   "piggybackCommand": {
     "type": "connectivity.commands:createConnection",
     "connection": {
-      "id": "hono-connection-for-'"aircraft"'",
+      "id": "hono-connection-for-'"abb"'",
       "connectionType": "amqp-10",
       "connectionStatus": "open",
       "uri": "amqp://consumer%40HONO:verysecret@'"c2e"'-dispatch-router-ext:15672",
@@ -63,8 +63,8 @@ curl -i -X POST -u devops:foobar -H 'Content-Type: application/json' --data '{
       "sources": [
         {
           "addresses": [
-            "telemetry/'"aircraft"'",
-            "event/'"aircraft"'"
+            "telemetry/'"abb"'",
+            "event/'"abb"'"
           ],
           "authorizationContext": [
             "pre-authenticated:hono-connection"
@@ -83,7 +83,7 @@ curl -i -X POST -u devops:foobar -H 'Content-Type: application/json' --data '{
             "enabled": true,
             "address": "{{ header:reply-to }}",
             "headerMapping": {
-              "to": "command/'"aircraft"'/{{ header:hono-device-id }}",
+              "to": "command/'"abb"'/{{ header:hono-device-id }}",
               "subject": "{{ header:subject | fn:default(topic:action-subject) | fn:default(topic:criterion) }}-response",
               "correlation-id": "{{ header:correlation-id }}",
               "content-type": "{{ header:content-type | fn:default('"'"'application/vnd.eclipse.ditto+json'"'"') }}"
@@ -100,7 +100,7 @@ curl -i -X POST -u devops:foobar -H 'Content-Type: application/json' --data '{
         },
         {
           "addresses": [
-            "command_response/'"aircraft"'/replies"
+            "command_response/'"abb"'/replies"
           ],
           "authorizationContext": [
             "pre-authenticated:hono-connection"
@@ -121,7 +121,7 @@ curl -i -X POST -u devops:foobar -H 'Content-Type: application/json' --data '{
       ],
       "targets": [
         {
-          "address": "command/'"aircraft"'",
+          "address": "command/'"abb"'",
           "authorizationContext": [
             "pre-authenticated:hono-connection"
           ],
@@ -130,15 +130,15 @@ curl -i -X POST -u devops:foobar -H 'Content-Type: application/json' --data '{
             "_/_/things/live/messages"
           ],
           "headerMapping": {
-            "to": "command/'"aircraft"'/{{ thing:id }}",
+            "to": "command/'"abb"'/{{ thing:id }}",
             "subject": "{{ header:subject | fn:default(topic:action-subject) }}",
             "content-type": "{{ header:content-type | fn:default('"'"'application/vnd.eclipse.ditto+json'"'"') }}",
             "correlation-id": "{{ header:correlation-id }}",
-            "reply-to": "{{ fn:default('"'"'command_response/'"aircraft"'/replies'"'"') | fn:filter(header:response-required,'"'"'ne'"'"','"'"'false'"'"') }}"
+            "reply-to": "{{ fn:default('"'"'command_response/'"abb"'/replies'"'"') | fn:filter(header:response-required,'"'"'ne'"'"','"'"'false'"'"') }}"
           }
         },
         {
-          "address": "command/'"aircraft"'",
+          "address": "command/'"abb"'",
           "authorizationContext": [
             "pre-authenticated:hono-connection"
           ],
@@ -147,16 +147,51 @@ curl -i -X POST -u devops:foobar -H 'Content-Type: application/json' --data '{
             "_/_/things/live/events"
           ],
           "headerMapping": {
-            "to": "command/'"aircraft"'/{{ thing:id }}",
+            "to": "command/'"abb"'/{{ thing:id }}",
             "subject": "{{ header:subject | fn:default(topic:action-subject) }}",
             "content-type": "{{ header:content-type | fn:default('"'"'application/vnd.eclipse.ditto+json'"'"') }}",
             "correlation-id": "{{ header:correlation-id }}"
           }
         }
       ]
+      
     }
   }
 }' http://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
+
+###
+
+\nfunction mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {const jsonData = JSON.parse(textPayload);const value = {measurements: {properties: {di_Stop: jsonData[\"metrics\"][\"di_Stop\"],OperatingMode: jsonData[\"metrics\"][\"OperatingMode\"]}}}; return Ditto.buildDittoProtocolMsg(abb,yumi,things,twin,commands,modify,/features,headers,value); }",
+
+
+,
+      "mappingDefinition": {
+                "mappingEngine": "JavaScript",
+                "options": {
+                    "incomingScript": "function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {     const jsonString = String.fromCharCode.apply(null, new Uint8Array(bytePayload));const jsonData = JSON.parse(textPayload);const value = {measurements: {properties: {OperatingMode: 25}}};return Ditto.buildDittoProtocolMsg('abb','yumi','things','twin','commands','modify','/features',headers,value);}",
+                    "loadBytebufferJS": "false",
+                    "loadLongJS": "false"
+                }
+        }
+
+########################################################################################
+### Delete Connection ##################################################################
+########################################################################################
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+  "targetActorSelection": "/system/sharding/connection",
+  "headers": {
+    "aggregate": false
+  },
+  "piggybackCommand": {
+    "type": "connectivity.commands:deleteConnection",
+    "connectionId": "hono-connection-for-abb"
+  }
+}
 
 ########################################################################################
 ### Setup policy #######################################################################
@@ -212,9 +247,11 @@ curl -i -X PUT -u ditto:ditto -H 'Content-Type: application/json' --data '{
 curl -X PUT -u ditto:ditto -H 'Content-Type: application/json' --data '{
   "policyId": "{{org}}:{{honodevice}}",
   "attributes": {
-    "location": "Germany",
-    "airportID": "EDRO",
-    "airportName": "Sonderlandeplatz Schweighofen"
+    "location": "Mannheim",
+    "manufacturer": "ABB",
+    "roboter": "YuMi",
+    "plc": "IRC5",
+    "serial number": "4711"
   },
   "features": {
   }
@@ -224,118 +261,31 @@ curl -X PUT -u ditto:ditto -H 'Content-Type: application/json' --data '{
 ### DELETE THE TWIN ####################################################################
 ########################################################################################
 
-DELETE {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/org.fournier:rf4
+DELETE {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/abb:yumi
 Authorization: Basic ditto:ditto
 
 ########################################################################################
 ### Delete all Features #ä##############################################################
 ########################################################################################
 
-DELETE {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/org.fournier:rf4/features
+DELETE {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/abb:yumi/features
 Authorization: Basic ditto:ditto
 
 ########################################################################################
 ### New Features #ä#####################################################################
 ########################################################################################
 
-PUT {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/org.fournier:rf4/features
+PUT {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/abb:yumi/features
 Content-Type: application/json
 Authorization: Basic ditto:ditto
 
 {
-	"engine": {
-		"properties": {
-			"manufacturer": [
-				"com.rectimo:4AR1200"
-			],
-			"yearOfManufacturing": 1968,
-      "status": {
-        "running": {
-          "value": true
-        },
-        "fuelSwitch": {
-          "value": true
-        },
-        "hours": {
-          "value": 1804,
-        "unit": "h"
-        },
-        "cylheadtemp": {
-          "value": 185,
-        "unit": "deg Celsius"
-        },
-        "oiltemp": {
-          "value": 60,
-        "unit": "deg Celsius"
-        },
-        "Tach": {
-          "value": 2950,
-        "unit": "rpm"
+	"measurements": {
+            "properties": {
+                "di_Stop": true,
+                "OperatingMode": "1"
+            }
         }
-      }
-    }
-	},
-	"airframe": {
-		"properties": {
-			"configuration": {
-				"yearOfManufacturing": 1968,
-				"builtNo": 4102,
-				"reg": "D-KALC"
-			},
-			"status": {
-				"damaged": false,
-				"condition": "fancy"
-			}
-		}
-	},
-  "instrumentStatus": {
-    "properties": {
-      "inFlight": {
-        "value": false
-      },
-      "landingGear": {
-        "value": true
-      },
-      "mainSwitch": {
-        "value": true
-      },
-      "antiCollisionLight": {
-        "value": true
-      },
-      "radio": {
-        "value": true,
-        "frequency": 118.085,
-        "unit": "MHz"
-      },
-      "qnh": {
-        "value": 1013,
-        "unit": "hPa"
-      },
-      "transponder": {
-        "value": 7000
-      }
-    }
-  },
-  "telemetry": {
-    "properties": {
-      "altitude": {
-        "value": null,
-        "unit": "ft"
-      },
-      "speed": {
-        "value": null,
-        "unit": "km/h"
-      },
-      "heading": {
-        "value": null,
-        "unit": "deg"
-      },
-      "bank": {
-        "value": null,
-        "unit": "deg"
-      }
-    }
-  }
 }
 
 ########################################################################################
@@ -417,10 +367,10 @@ Authorization: Basic {{honodevice}}@{{honotenant}}:{{honodevicepwd}}
 
 POST {{proto}}://{{hostname}}:{{httpadapterport}}/telemetry
 Content-Type: application/json
-Authorization: Basic aircraft@joel:{{honodevicepwd}}
+Authorization: Basic nsp@joel:{{honodevicepwd}}
 
 {
-  "topic": "org.fournier/aircraft/things/twin/commands/modify",
+  "topic": "org.fournier/nsp/things/twin/commands/modify",
   "headers": {},
   "path": "/features/telemetry/properties/altitude/value",
   "value": 3000
@@ -620,7 +570,7 @@ Content-Type: application/json
 
 POST {{proto}}://{{hostname}}:{{httpadapterport}}/telemetry
 Content-Type: application/json
-Authorization: Basic aircraft@joel:{{honodevicepwd}}
+Authorization: Basic nsp@joel:{{honodevicepwd}}
 
 {
   "topic": "org.fournier/rf4/things/twin/commands/modify",

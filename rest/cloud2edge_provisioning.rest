@@ -443,7 +443,7 @@ curl -u ditto:ditto -w '\n' {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/
 ### DELETE A TWIN ######################################################################
 ########################################################################################
 
-DELETE {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/test:testdevice
+DELETE {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/HSMA:smartDT060921
 Authorization: Basic ditto:ditto
 
 ### CURL ###############################################################################

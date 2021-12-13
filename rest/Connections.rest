@@ -47,6 +47,42 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
 }
 
 ########################################################################################
+### Establish AMQP 901 Connection for Telemetry ########################################
+########################################################################################
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity?timeout=8s
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+  "targetActorSelection": "/system/sharding/connection",
+  "headers": {
+    "aggregate": false
+  },
+  "piggybackCommand": {
+    "type": "connectivity.commands:createConnection",
+    "connection": {
+      "id": "rabbit-mq-connection-901-telemetry",
+      "connectionType": "amqp-091",
+      "connectionStatus": "open",
+      "uri": "amqp://ditto:admin1234@mq.jreichwald.de:5672",
+      "failoverEnabled": true,
+      "targets": [
+        { 
+          "address": "events/twin",
+          "topics": [
+            "_/_/things/twin/events"
+          ],
+          "authorizationContext": [
+                "pre-authenticated:hono-connection"
+              ] 
+        } 
+      ]
+    }
+  }
+}
+
+########################################################################################
 ### Establish AMQP 901 Connection for New Devices ######################################
 ########################################################################################
 
@@ -195,7 +231,7 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
   },
   "piggybackCommand": {
     "type": "connectivity.commands:deleteConnection",
-    "connectionId": "hono-connection-for-HSMA"
+    "connectionId": "rabbit-mq-connection-901-telemetry"
   }
 }
 
@@ -214,7 +250,7 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
   },
   "piggybackCommand": {
     "type": "connectivity.commands:retrieveConnectionMetrics",
-    "connectionId": "hono-connection-for-HSMA"
+    "connectionId": "rabbit-mq-connection-901-telemetry"
   }
 }
 
@@ -233,7 +269,7 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
   },
   "piggybackCommand": {
     "type": "connectivity.commands:retrieveConnectionStatus",
-    "connectionId": "rabbit-mq-connection-901"
+    "connectionId": "rabbit-mq-connection-901-telemetry"
   }
 }
 
