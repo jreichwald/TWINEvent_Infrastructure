@@ -346,6 +346,18 @@ Authorization: Basic ditto:ditto
 POST {{proto}}://{{hostname}}:{{httpadapterport}}/telemetry
 Content-Type: application/json
 Authorization: Basic {{honodevice}}@{{honotenant}}:{{honodevicepwd}}
+{
+  "topic": "{{org}}/{{honodevice}}/things/twin/commands/modify",
+  "headers": {},
+  "path": "/features/instrumentStatus/properties/inFlight/value",
+  "value": true
+}
+
+####
+
+POST http://141.19.44.65:18443/telemetry
+Content-Type: application/json
+Authorization: Basic {{honodevice}}@{{honotenant}}:{{honodevicepwd}}
 
 {
   "topic": "{{org}}/{{honodevice}}/things/twin/commands/modify",

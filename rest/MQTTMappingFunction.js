@@ -287,8 +287,8 @@ function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {
     const value = {
             measurements: {
                 properties: {
-                    di_Stop: jsonData["metrics"]["di_Stop"],
-                    OperatingMode: jsonData["metrics"]["OperatingMode"]
+                    di_Stop: jsonData.metrics.di_Stop,
+                    OperatingMode: jsonData.metrics.OperatingMode
                 }
             }
         };
@@ -306,6 +306,6 @@ function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {
 }
 
 
+function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {const jsonData = JSON.parse(textPayload);const value = {measurements: {properties: {di_Stop: jsonData[\"metrics\"][\"di_Stop\"],OperatingMode: jsonData[\"metrics\"][\"OperatingMode\"]}}};return Ditto.buildDittoProtocolMsg('abb','yumi','things','twin','commands','modify','/features',headers,value);}
 
-
-'{measurements: {properties: {di_Stop: \"47\",OperatingMode: \"11\"}}};'
+function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {const jsonData = JSON.parse(textPayload);const value = {measurements: {properties: {di_Stop: jsonData['metrics']['di_Stop'],OperatingMode: jsonData['metrics']['OperatingMode']}}};return Ditto.buildDittoProtocolMsg('abb','yumi','things','twin','commands','modify','/features',headers,value);}

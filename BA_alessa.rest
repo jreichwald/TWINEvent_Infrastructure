@@ -20,15 +20,27 @@
 
 curl -i -X POST http://{{hostname}}:{{devregport}}/v1/tenants/{{honotenant}}
 
-###
+########################################################################################
+### Register Gateway ###################################################################
+########################################################################################
 
-curl -i -X POST http://{{hostname}}:{{devregport}}/v1/tenants/hallo
+POST http://{{hostname}}:{{devregport}}/v1/devices/{{honotenant}}/GW
+
 
 ########################################################################################
 ### Register Device ####################################################################
 ########################################################################################
 
-curl -i -X POST http://{{hostname}}:{{devregport}}/v1/devices/{{honotenant}}/{{org}}:{{honodevice}}
+POST http://{{hostname}}:{{devregport}}/v1/devices/{{honotenant}}/{{org}}:{{honodevice}}
+Content-Type: application/json
+
+{"via": [ "GW" ]}
+
+########################################################################################
+### Delete Device ######################################################################
+########################################################################################
+
+DELETE http://{{hostname}}:{{devregport}}/v1/devices/{{honotenant}}/{{org}}:{{honodevice}}
 
 ########################################################################################
 ### Set Device Credentials #############################################################
@@ -42,6 +54,38 @@ curl -i -X PUT -H "Content-Type: application/json" --data '[
     "pwd-plain": "{{honodevicepwd}}"
   }]
 }]' http://{{hostname}}:{{devregport}}/v1/credentials/{{honotenant}}/{{org}}:{{honodevice}}
+
+########################################################################################
+### Gateway Credentials ################################################################
+########################################################################################
+
+curl -i -X PUT -H "Content-Type: application/json" --data '[
+{
+  "type": "hashed-password",
+  "auth-id": "GW",
+  "secrets": [{
+    "pwd-plain": "sehrgeheim"
+  }]
+}]' http://{{hostname}}:{{devregport}}/v1/credentials/{{honotenant}}/GW
+
+########################################################################################
+### Delete Connection ##################################################################
+########################################################################################
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+  "targetActorSelection": "/system/sharding/connection",
+  "headers": {
+    "aggregate": false
+  },
+  "piggybackCommand": {
+    "type": "connectivity.commands:deleteConnection",
+    "connectionId": "hono-connection-for-abb"
+  }
+}
 
 ########################################################################################
 ### Create Connection ##################################################################
@@ -119,6 +163,12 @@ curl -i -X POST -u devops:foobar -H 'Content-Type: application/json' --data '{
           }
         }
       ],
+      "mappingContext": {
+                "mappingEngine": "JavaScript",
+                "options": {
+                    "incomingScript": "function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {const jsonString = String.fromCharCode.apply(null, new Uint8Array(bytePayload));let jsonData = JSON.parse(jsonString);let value = {measurements: {properties: {di_Stop: jsonData.metrics.di_Stop,OperatingMode: jsonData.metrics.OperatingMode}}};return Ditto.buildDittoProtocolMsg('"'"'abb'"'"','"'"'yumi'"'"','"'"'things'"'"','"'"'twin'"'"','"'"'commands'"'"','"'"'modify'"'"','"'"'/features'"'"',headers,value);}"
+                }
+        },
       "targets": [
         {
           "address": "command/'"abb"'",
@@ -173,6 +223,12 @@ curl -i -X POST -u devops:foobar -H 'Content-Type: application/json' --data '{
                     "loadLongJS": "false"
                 }
         }
+
+
+function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {const jsonData = JSON.parse(textPayload);const value = {measurements: {properties: {di_Stop: jsonData[\"metrics\"][\"di_Stop\"],OperatingMode: jsonData[\"metrics\"][\"OperatingMode\"]}}};return Ditto.buildDittoProtocolMsg('abb','yumi','things','twin','commands','modify','/features',headers,value);}
+
+'"'"'
+'"""'
 
 ########################################################################################
 ### Delete Connection ##################################################################
@@ -570,13 +626,13 @@ Content-Type: application/json
 
 POST {{proto}}://{{hostname}}:{{httpadapterport}}/telemetry
 Content-Type: application/json
-Authorization: Basic nsp@joel:{{honodevicepwd}}
+Authorization: Basic {{honodevice}}@{{honotenant}}:{{honodevicepwd}}
 
 {
-  "topic": "org.fournier/rf4/things/twin/commands/modify",
+  "topic": "abb/yumi/things/twin/commands/modify",
   "headers": {},
-  "path": "/features/engine/properties/status/JoelTemp/value",
-  "value": 999
+  "path": "/features/measurements/properties/di_Stop",
+  "di_Stop": false
 }
 
 
