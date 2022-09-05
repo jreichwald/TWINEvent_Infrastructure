@@ -1,471 +1,518 @@
 @proto = http
-#@hostname = twinserver.kve.hs-mannheim.de 
-@hostname = 192.168.203.10
+@hostname = 141.19.44.61
 @user = ditto
-@honodevice = yumi
-@org = abb
-@honotenant = abb
-@honodevicepwd = sehrgeheim
-@manufacturer = abb
+@honodevice = A320
+@honotenant = airbus
+@org = airb
+@honodevicepwd = flugzeug
 @pwd = ditto
-@port = 38443
-@httpadapterport = 18443
-@devregport = 28443
-@dittoport = 38443
+@port = 30080 
+
+@dittoport = 30080 
 @dittodevopsusr = devops
-@dittodevopspwd = foo
-
-########################################################################################
-### Create Tenant ######################################################################
-########################################################################################
-
-curl -i -X POST http://{{hostname}}:{{devregport}}/v1/tenants/{{honotenant}}
-
-########################################################################################
-### Register Gateway ###################################################################
-########################################################################################
-
-POST http://{{hostname}}:{{devregport}}/v1/devices/{{honotenant}}/GW
+@dittodevopspwd = foobar
 
 
 ########################################################################################
-### Register Device ####################################################################
+########################################################################################
+### DITTO STUFF ########################################################################
+########################################################################################
 ########################################################################################
 
-POST http://{{hostname}}:{{devregport}}/v1/devices/{{honotenant}}/{{org}}:{{honodevice}}
+########################################################################################
+### Create Thing #######################################################################
+########################################################################################
+
+PUT {{proto}}://{{hostname}}:{{port}}/api/2/things/cemos:optmeasurementdev1
 Content-Type: application/json
-
-{"via": [ "GW" ]}
-
-########################################################################################
-### Delete Device ######################################################################
-########################################################################################
-
-DELETE http://{{hostname}}:{{devregport}}/v1/devices/{{honotenant}}/{{org}}:{{honodevice}}
-
-########################################################################################
-### Set Device Credentials #############################################################
-########################################################################################
-
-curl -i -X PUT -H "Content-Type: application/json" --data '[
-{
-  "type": "hashed-password",
-  "auth-id": "{{honodevice}}",
-  "secrets": [{
-    "pwd-plain": "{{honodevicepwd}}"
-  }]
-}]' http://{{hostname}}:{{devregport}}/v1/credentials/{{honotenant}}/{{org}}:{{honodevice}}
-
-########################################################################################
-### Gateway Credentials ################################################################
-########################################################################################
-
-curl -i -X PUT -H "Content-Type: application/json" --data '[
-{
-  "type": "hashed-password",
-  "auth-id": "GW",
-  "secrets": [{
-    "pwd-plain": "sehrgeheim"
-  }]
-}]' http://{{hostname}}:{{devregport}}/v1/credentials/{{honotenant}}/GW
-
-########################################################################################
-### Delete Connection ##################################################################
-########################################################################################
-
-POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
-Content-Type: application/json
-Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+Authorization: Basic {{user}}:{{pwd}}
 
 {
-  "targetActorSelection": "/system/sharding/connection",
-  "headers": {
-    "aggregate": false
+  "thingId": "cemos:optmeasurementdev1",
+  "definition": "cemos:optmeasurementdev:0.1",
+  "attributes": {
+    "manufacturer": "ACME demo corp.",
+    "location": "Mannheim University of Applied Sciences",
+    "institute": "Center for Mass Spectrometry and Optical Spectroscopy",
+    "serialno": "1",
+    "model": "Optical Measurement Device"
   },
-  "piggybackCommand": {
-    "type": "connectivity.commands:deleteConnection",
-    "connectionId": "hono-connection-for-abb"
+  "features": {
+    "coffee-brewer": {
+      "definition": [
+        "com.acme:coffeebrewer:0.1.0"
+      ],
+      "properties": {
+        "brewed-coffees": 0
+      }
+    },
+    "water-tank": {
+      "properties": {
+        "configuration": {
+          "smartMode": true,
+          "brewingTemp": 87,
+          "tempToHold": 44,
+          "timeoutSeconds": 6000
+        },
+        "status": {
+          "waterAmount": 731,
+          "temperature": 44
+        }
+      }
+    }
   }
 }
 
 ########################################################################################
-### Create Connection ##################################################################
+### Create MQTT Connection zu Julians Broker ###########################################
 ########################################################################################
 
-curl -i -X POST -u devops:foobar -H 'Content-Type: application/json' --data '{
-  "targetActorSelection": "/system/sharding/connection",
-  "headers": {
-    "aggregate": false
-  },
-  "piggybackCommand": {
-    "type": "connectivity.commands:createConnection",
-    "connection": {
-      "id": "hono-connection-for-'"abb"'",
-      "connectionType": "amqp-10",
-      "connectionStatus": "open",
-      "uri": "amqp://consumer%40HONO:verysecret@'"c2e"'-dispatch-router-ext:15672",
-      "failoverEnabled": true,
-      "sources": [
-        {
-          "addresses": [
-            "telemetry/'"abb"'",
-            "event/'"abb"'"
-          ],
-          "authorizationContext": [
-            "pre-authenticated:hono-connection"
-          ],
-          "enforcement": {
-            "input": "{{ header:device_id }}",
-            "filters": [
-              "{{ entity:id }}"
-            ]
-          },
-          "headerMapping": {
-            "hono-device-id": "{{ header:device_id }}",
-            "content-type": "{{ header:content-type }}"
-          },
-          "replyTarget": {
-            "enabled": true,
-            "address": "{{ header:reply-to }}",
-            "headerMapping": {
-              "to": "command/'"abb"'/{{ header:hono-device-id }}",
-              "subject": "{{ header:subject | fn:default(topic:action-subject) | fn:default(topic:criterion) }}-response",
-              "correlation-id": "{{ header:correlation-id }}",
-              "content-type": "{{ header:content-type | fn:default('"'"'application/vnd.eclipse.ditto+json'"'"') }}"
-            },
-            "expectedResponseTypes": [
-              "response",
-              "error"
-            ]
-          },
-          "acknowledgementRequests": {
-            "includes": [],
-            "filter": "fn:filter(header:qos,'"'"'ne'"'"','"'"'0'"'"')"
-          }
-        },
-        {
-          "addresses": [
-            "command_response/'"abb"'/replies"
-          ],
-          "authorizationContext": [
-            "pre-authenticated:hono-connection"
-          ],
-          "headerMapping": {
-            "content-type": "{{ header:content-type }}",
-            "correlation-id": "{{ header:correlation-id }}",
-            "status": "{{ header:status }}"
-          },
-          "replyTarget": {
-            "enabled": false,
-            "expectedResponseTypes": [
-              "response",
-              "error"
-            ]
-          }
-        }
-      ],
-      "mappingContext": {
-                "mappingEngine": "JavaScript",
-                "options": {
-                    "incomingScript": "function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {const jsonString = String.fromCharCode.apply(null, new Uint8Array(bytePayload));let jsonData = JSON.parse(jsonString);let value = {measurements: {properties: {di_Stop: 666}}};return Ditto.buildDittoProtocolMsg('"'"'abb'"'"','"'"'yumi'"'"','"'"'things'"'"','"'"'twin'"'"','"'"'commands'"'"','"'"'modify'"'"','"'"'/features'"'"',headers,value);}"
-                }
-        },
-      "targets": [
-        {
-          "address": "command/'"abb"'",
-          "authorizationContext": [
-            "pre-authenticated:hono-connection"
-          ],
-          "topics": [
-            "_/_/things/live/commands",
-            "_/_/things/live/messages"
-          ],
-          "headerMapping": {
-            "to": "command/'"abb"'/{{ thing:id }}",
-            "subject": "{{ header:subject | fn:default(topic:action-subject) }}",
-            "content-type": "{{ header:content-type | fn:default('"'"'application/vnd.eclipse.ditto+json'"'"') }}",
-            "correlation-id": "{{ header:correlation-id }}",
-            "reply-to": "{{ fn:default('"'"'command_response/'"abb"'/replies'"'"') | fn:filter(header:response-required,'"'"'ne'"'"','"'"'false'"'"') }}"
-          }
-        },
-        {
-          "address": "command/'"abb"'",
-          "authorizationContext": [
-            "pre-authenticated:hono-connection"
-          ],
-          "topics": [
-            "_/_/things/twin/events",
-            "_/_/things/live/events"
-          ],
-          "headerMapping": {
-            "to": "command/'"abb"'/{{ thing:id }}",
-            "subject": "{{ header:subject | fn:default(topic:action-subject) }}",
-            "content-type": "{{ header:content-type | fn:default('"'"'application/vnd.eclipse.ditto+json'"'"') }}",
-            "correlation-id": "{{ header:correlation-id }}"
-          }
-        }
-      ]
-      
-    }
-  }
-}' http://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
-
-
-########################################################################################
-### Create Connection ##################################################################
-########################################################################################
-
-curl -i -X POST -u devops:foobar -H 'Content-Type: application/json' --data '{
-  "targetActorSelection": "/system/sharding/connection",
-  "headers": {
-    "aggregate": false
-  },
-  "piggybackCommand": {
-    "type": "connectivity.commands:createConnection",
-    "connection": {
-      "id": "hono-connection-for-'"abb"'",
-      "connectionType": "amqp-10",
-      "connectionStatus": "open",
-      "uri": "amqp://consumer%40HONO:verysecret@'"c2e"'-dispatch-router-ext:15672",
-      "failoverEnabled": true,
-      "sources": [
-        {
-          "addresses": [
-            "telemetry/'"abb"'",
-            "event/'"abb"'"
-          ],
-          "authorizationContext": [
-            "pre-authenticated:hono-connection"
-          ],
-          "enforcement": {
-            "input": "{{ header:device_id }}",
-            "filters": [
-              "{{ entity:id }}"
-            ]
-          },
-          "headerMapping": {
-            "hono-device-id": "{{ header:device_id }}",
-            "content-type": "{{ header:content-type }}"
-          },
-          "replyTarget": {
-            "enabled": true,
-            "address": "{{ header:reply-to }}",
-            "headerMapping": {
-              "to": "command/'"abb"'/{{ header:hono-device-id }}",
-              "subject": "{{ header:subject | fn:default(topic:action-subject) | fn:default(topic:criterion) }}-response",
-              "correlation-id": "{{ header:correlation-id }}",
-              "content-type": "{{ header:content-type | fn:default('"'"'application/vnd.eclipse.ditto+json'"'"') }}"
-            },
-            "expectedResponseTypes": [
-              "response",
-              "error"
-            ]
-          },
-          "acknowledgementRequests": {
-            "includes": [],
-            "filter": "fn:filter(header:qos,'"'"'ne'"'"','"'"'0'"'"')"
-          }
-        },
-        {
-          "addresses": [
-            "command_response/'"abb"'/replies"
-          ],
-          "authorizationContext": [
-            "pre-authenticated:hono-connection"
-          ],
-          "headerMapping": {
-            "content-type": "{{ header:content-type }}",
-            "correlation-id": "{{ header:correlation-id }}",
-            "status": "{{ header:status }}"
-          },
-          "replyTarget": {
-            "enabled": false,
-            "expectedResponseTypes": [
-              "response",
-              "error"
-            ]
-          }
-        }
-      ],
-      "mappingContext": {
-                "mappingEngine": "JavaScript",
-                "options": {
-                    "incomingScript": "function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {const jsonString = String.fromCharCode.apply(null, new Uint8Array(bytePayload));let jsonData = JSON.parse(jsonString);let value = {measurements: {properties: {di_Stop: jsonData.metrics.di_Stop,OperatingMode: jsonData.metrics.OperatingMode}}};return Ditto.buildDittoProtocolMsg('"'"'abb'"'"','"'"'yumi'"'"','"'"'things'"'"','"'"'twin'"'"','"'"'commands'"'"','"'"'modify'"'"','"'"'/features'"'"',headers,value);}"
-                }
-        },
-      "targets": [
-        {
-          "address": "command/'"abb"'",
-          "authorizationContext": [
-            "pre-authenticated:hono-connection"
-          ],
-          "topics": [
-            "_/_/things/live/commands",
-            "_/_/things/live/messages"
-          ],
-          "headerMapping": {
-            "to": "command/'"abb"'/{{ thing:id }}",
-            "subject": "{{ header:subject | fn:default(topic:action-subject) }}",
-            "content-type": "{{ header:content-type | fn:default('"'"'application/vnd.eclipse.ditto+json'"'"') }}",
-            "correlation-id": "{{ header:correlation-id }}",
-            "reply-to": "{{ fn:default('"'"'command_response/'"abb"'/replies'"'"') | fn:filter(header:response-required,'"'"'ne'"'"','"'"'false'"'"') }}"
-          }
-        },
-        {
-          "address": "command/'"abb"'",
-          "authorizationContext": [
-            "pre-authenticated:hono-connection"
-          ],
-          "topics": [
-            "_/_/things/twin/events",
-            "_/_/things/live/events"
-          ],
-          "headerMapping": {
-            "to": "command/'"abb"'/{{ thing:id }}",
-            "subject": "{{ header:subject | fn:default(topic:action-subject) }}",
-            "content-type": "{{ header:content-type | fn:default('"'"'application/vnd.eclipse.ditto+json'"'"') }}",
-            "correlation-id": "{{ header:correlation-id }}"
-          }
-        }
-      ]
-      
-    }
-  }
-}' http://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
-
-###
-
-\nfunction mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {const jsonData = JSON.parse(textPayload);const value = {measurements: {properties: {di_Stop: jsonData[\"metrics\"][\"di_Stop\"],OperatingMode: jsonData[\"metrics\"][\"OperatingMode\"]}}}; return Ditto.buildDittoProtocolMsg(abb,yumi,things,twin,commands,modify,/features,headers,value); }",
-
-
-,
-      "mappingDefinition": {
-                "mappingEngine": "JavaScript",
-                "options": {
-                    "incomingScript": "function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {     const jsonString = String.fromCharCode.apply(null, new Uint8Array(bytePayload));const jsonData = JSON.parse(textPayload);const value = {measurements: {properties: {OperatingMode: 25}}};return Ditto.buildDittoProtocolMsg('abb','yumi','things','twin','commands','modify','/features',headers,value);}",
-                    "loadBytebufferJS": "false",
-                    "loadLongJS": "false"
-                }
-        }
-
-
-function mapToDittoProtocolMsg(headers, textPayload, bytePayload, contentType) {const jsonData = JSON.parse(textPayload);const value = {measurements: {properties: {di_Stop: jsonData[\"metrics\"][\"di_Stop\"],OperatingMode: jsonData[\"metrics\"][\"OperatingMode\"]}}};return Ditto.buildDittoProtocolMsg('abb','yumi','things','twin','commands','modify','/features',headers,value);}
-
-'"'"'
-'"""'
-
-########################################################################################
-### Delete Connection ##################################################################
-########################################################################################
-
-POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity?timeout=10s
 Content-Type: application/json
 Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
 
 {
-  "targetActorSelection": "/system/sharding/connection",
-  "headers": {
-    "aggregate": false
-  },
-  "piggybackCommand": {
-    "type": "connectivity.commands:deleteConnection",
-    "connectionId": "hono-connection-for-abb"
+    "targetActorSelection": "/system/sharding/connection",
+    "headers": {
+    	"aggregate": false
+    },
+    "piggybackCommand": {
+        "type": "connectivity.commands:createConnection",
+        "connection": {
+            "id": "mqtt-julian2",
+            "connectionType": "mqtt",
+            "connectionStatus": "open",
+            "failoverEnabled": true,
+            "uri": "tcp://dbt:dbt@mq.jreichwald.de:1883",
+            "sources": [{
+                "addresses": ["cemos-ditto/#"],
+                "authorizationContext": ["nginx:ditto"],
+                "qos": 0,
+                "filters": []
+            }],
+            "targets": [{
+                "address": "cemos-ditto/{{ thing:id }}",
+                "topics": [
+                "_/_/things/twin/events",
+                "_/_/things/live/messages"
+                ],
+                "authorizationContext": ["nginx:ditto"],
+                "qos": 0
+            }]
+        }
+    }
+}
+
+########################################################################################
+### Publish something via mqtt #########################################################
+### In Topic: cemos-ditto/cemos:optmeasurementdev1 #####################################
+########################################################################################
+
+{
+  "topic": "cemos/optmeasurementdev1/things/twin/commands/modify",
+  "headers": {},
+  "path": "/features/coffee-brewer/properties/brewed-coffees",
+  "value": {
+    "connected": true,
+    "brewed-coffees": 60
   }
 }
+
+########################################################################################
+### Update specific features via HTTP ##################################################
+########################################################################################
+
+PATCH {{proto}}://{{hostname}}:{{port}}/api/2/things/cemos:optmeasurementdev1/features/coffee-brewer/properties/brewed-coffees
+Content-Type: application/merge-patch+json
+Authorization: Basic {{user}}:{{pwd}}
+
+{
+"definition":null,
+"properties":{
+  "connected":true,
+  "brewed-coffees":40,
+  "bla":40
+  }
+}
+
+
+########################################################################################
+### Sending Question via HTTP ##########################################################
+### In Topic: cemos-ditto/cemos:optmeasurementdev1 #####################################
+########################################################################################
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/cemos:optmeasurementdev1/inbox/messages/ask
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pwd}}
+
+{
+"test":"CMD"
+}
+
+########################################################################################
+### Sending a Command to a specific feature ############################################
+### In Topic: cemos-ditto/cemos:optmeasurementdev1 #####################################
+########################################################################################
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/cemos:optmeasurementdev1/features/water-tank/inbox/messages/action
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pwd}}
+
+{
+"test":"HEAT"
+}
+
+########################################################################################
+########################################################################################
+### DITTO STUFF ########################################################################
+########################################################################################
+########################################################################################
+########################################################################################
+########################################################################################
+### DITTO STUFF ########################################################################
+########################################################################################
+########################################################################################
+########################################################################################
+########################################################################################
+### DITTO STUFF ########################################################################
+########################################################################################
+########################################################################################
 
 ########################################################################################
 ### Setup policy #######################################################################
 ########################################################################################
 
-curl -i -X PUT -u ditto:ditto -H 'Content-Type: application/json' --data '{
+curl -X PUT -u ditto:ditto -H 'Content-Type: application/json' --data '{
   "entries": {
     "DEFAULT": {
       "subjects": {
         "{{ request:subjectId }}": {
-           "type": "Ditto user authenticated via nginx"
+          "type": "the creator"
         }
       },
       "resources": {
-        "thing:/": {
-          "grant": ["READ", "WRITE"],
-          "revoke": []
-        },
         "policy:/": {
-          "grant": ["READ", "WRITE"],
+          "grant": [
+            "READ",
+            "WRITE"
+          ],
           "revoke": []
         },
-        "message:/": {
-          "grant": ["READ", "WRITE"],
-          "revoke": []
-        }
-      }
-    },
-    "HONO": {
-      "subjects": {
-        "pre-authenticated:hono-connection": {
-          "type": "Connection to Eclipse Hono"
-        }
-      },
-      "resources": {
         "thing:/": {
-          "grant": ["READ", "WRITE"],
+          "grant": [
+            "READ",
+            "WRITE"
+          ],
           "revoke": []
         },
         "message:/": {
-          "grant": ["READ", "WRITE"],
+          "grant": [
+            "READ",
+            "WRITE"
+          ],
           "revoke": []
         }
       }
     }
   }
-}' http://{{hostname}}:{{dittoport}}/api/2/policies/{{org}}:{{honodevice}}
+}' http://141.19.44.69:8080/api/2/policies/ns1:policy1
+
+###
+
+curl -X 'PUT' \
+  'http://141.19.44.69:8080/api/2/policies/ns1%3Apolicy1' \
+  -H 'accept: application/json' \
+  -H 'Authorization: Basic ZGl0dG86ZGl0dG8=' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "entries": {
+    "DEFAULT": {
+      "subjects": {
+        "{{ request:subjectId }}": {
+          "type": "the creator"
+        }
+      },
+      "resources": {
+        "policy:/": {
+          "grant": [
+            "READ",
+            "WRITE"
+          ],
+          "revoke": []
+        },
+        "thing:/": {
+          "grant": [
+            "READ",
+            "WRITE"
+          ],
+          "revoke": []
+        },
+        "message:/": {
+          "grant": [
+            "READ",
+            "WRITE"
+          ],
+          "revoke": []
+        }
+      }
+    }
+  }
+}'
+
+###
+
+curl -X PUT -H 'accept: application/json' -u ditto:ditto -H 'Content-Type: application/json'  -d '{
+  "definition": "com.acme:coffeebrewer:0.1.0",
+  "attributes": {
+    "manufacturer": "ACME demo corp.",
+    "location": "Berlin, main floor",
+    "serialno": "42",
+    "model": "Speaking coffee machine"
+  },
+  "features": {
+    "coffee-brewer": {
+      "definition": [
+        "com.acme:coffeebrewer:0.1.0"
+      ],
+      "properties": {
+        "brewed-coffees": 0
+      }
+    },
+    "water-tank": {
+      "properties": {
+        "configuration": {
+          "smartMode": true,
+          "brewingTemp": 87,
+          "tempToHold": 44,
+          "timeoutSeconds": 6000
+        },
+        "status": {
+          "waterAmount": 731,
+          "temperature": 44
+        }
+      }
+    }
+  }
+}' http://141.19.44.61:30080/api/2/things/joel:fancy-car
+
+###
+
+curl -X PUT 'http://141.19.44.61:8080/api/2/policies/my.test:policy' -u 'ditto:ditto' -H 'Content-Type: application/json' -d '{
+    "entries": {
+        "owner": {
+            "subjects": {
+                "nginx:ditto": {
+                    "type": "nginx basic auth user"
+                }
+            },
+            "resources": {
+                "thing:/": {
+                    "grant": [
+                        "READ","WRITE"
+                    ],
+                    "revoke": []
+                },
+                "policy:/": {
+                    "grant": [
+                        "READ","WRITE"
+                    ],
+                    "revoke": []
+                },
+                "message:/": {
+                    "grant": [
+                        "READ","WRITE"
+                    ],
+                    "revoke": []
+                }
+            }
+        }
+    }
+}'
 
 ########################################################################################
 ### Create a twin ######################################################################
 ########################################################################################
 
 curl -X PUT -u ditto:ditto -H 'Content-Type: application/json' --data '{
-  "policyId": "{{org}}:{{honodevice}}",
-  "attributes": {
-    "location": "Mannheim",
-    "manufacturer": "ABB",
-    "roboter": "YuMi",
-    "plc": "IRC5",
-    "serial number": "4711"
-  },
-  "features": {
-  }
-}' http://{{hostname}}:{{dittoport}}/api/2/things/{{org}}:{{honodevice}}
+   "definition": "digitaltwin:DigitaltwinExample:1.0.0",
+   "attributes": {
+     "manufacturer": "ACME",
+     "VIN": "0815666337"
+   },
+   "features": {
+     "transmission": {
+       "properties": {
+         "automatic": true, 
+         "mode": "eco",
+         "cur_speed": 90, 
+         "gear": 5
+       }
+     },
+     "environment-scanner": {
+       "properties": {
+         "temperature": 20.8,
+         "humidity": 73,
+         "barometricPressure": 970.7,
+         "location": {
+           "longitude": 47.682170,
+           "latitude": 9.386372
+         },
+         "altitude": 399
+       }
+     }
+   }
+ }' http://{{hostname}}:{{dittoport}}/api/2/things/{{org}}:{{honodevice}}
+
+
+########################################################################################
+
+
+ curl -u ditto:ditto -X PUT -H 'Content-Type: application/json' -d '{
+   "definition": "digitaltwin:DigitaltwinExample:1.0.0",
+   "attributes": {
+     "manufacturer": "ACME",
+     "VIN": "0815666337"
+   },
+   "features": {
+     "transmission": {
+       "properties": {
+         "automatic": true, 
+         "mode": "eco",
+         "cur_speed": 90, 
+         "gear": 5
+       }
+     },
+     "environment-scanner": {
+       "properties": {
+         "temperature": 20.8,
+         "humidity": 73,
+         "barometricPressure": 970.7,
+         "location": {
+           "longitude": 47.682170,
+           "latitude": 9.386372
+         },
+         "altitude": 399
+       }
+     }
+   }
+ }' 'http://141.19.44.69:8080/api/2/things/org.eclipse.ditto:fancy-car'
 
 ########################################################################################
 ### DELETE THE TWIN ####################################################################
 ########################################################################################
 
-DELETE {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/abb:yumi
+DELETE {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/org.fournier:rf4
 Authorization: Basic ditto:ditto
 
 ########################################################################################
 ### Delete all Features #ä##############################################################
 ########################################################################################
 
-DELETE {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/abb:yumi/features
+DELETE {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/org.fournier:rf4/features
 Authorization: Basic ditto:ditto
 
 ########################################################################################
 ### New Features #ä#####################################################################
 ########################################################################################
 
-PUT {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/abb:yumi/features
+PUT {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/org.fournier:rf4/features
 Content-Type: application/json
 Authorization: Basic ditto:ditto
 
 {
-	"measurements": {
-            "properties": {
-                "di_Stop": true,
-                "OperatingMode": "0"
-            }
+	"engine": {
+		"properties": {
+			"manufacturer": [
+				"com.rectimo:4AR1200"
+			],
+			"yearOfManufacturing": 1968,
+      "status": {
+        "running": {
+          "value": true
+        },
+        "fuelSwitch": {
+          "value": true
+        },
+        "hours": {
+          "value": 1804,
+        "unit": "h"
+        },
+        "cylheadtemp": {
+          "value": 185,
+        "unit": "deg Celsius"
+        },
+        "oiltemp": {
+          "value": 60,
+        "unit": "deg Celsius"
+        },
+        "Tach": {
+          "value": 2950,
+        "unit": "rpm"
         }
+      }
+    }
+	},
+	"airframe": {
+		"properties": {
+			"configuration": {
+				"yearOfManufacturing": 1968,
+				"builtNo": 4102,
+				"reg": "D-KALC"
+			},
+			"status": {
+				"damaged": false,
+				"condition": "fancy"
+			}
+		}
+	},
+  "instrumentStatus": {
+    "properties": {
+      "inFlight": {
+        "value": false
+      },
+      "landingGear": {
+        "value": true
+      },
+      "mainSwitch": {
+        "value": true
+      },
+      "antiCollisionLight": {
+        "value": true
+      },
+      "radio": {
+        "value": true,
+        "frequency": 118.085,
+        "unit": "MHz"
+      },
+      "qnh": {
+        "value": 1013,
+        "unit": "hPa"
+      },
+      "transponder": {
+        "value": 7000
+      }
+    }
+  },
+  "telemetry": {
+    "properties": {
+      "altitude": {
+        "value": null,
+        "unit": "ft"
+      },
+      "speed": {
+        "value": null,
+        "unit": "km/h"
+      },
+      "heading": {
+        "value": null,
+        "unit": "deg"
+      },
+      "bank": {
+        "value": null,
+        "unit": "deg"
+      }
+    }
+  }
 }
 
 ########################################################################################
@@ -474,6 +521,18 @@ Authorization: Basic ditto:ditto
 ########################################################################################
 
 POST {{proto}}://{{hostname}}:{{httpadapterport}}/telemetry
+Content-Type: application/json
+Authorization: Basic {{honodevice}}@{{honotenant}}:{{honodevicepwd}}
+{
+  "topic": "{{org}}/{{honodevice}}/things/twin/commands/modify",
+  "headers": {},
+  "path": "/features/instrumentStatus/properties/inFlight/value",
+  "value": true
+}
+
+####
+
+POST http://141.19.44.65:18443/telemetry
 Content-Type: application/json
 Authorization: Basic {{honodevice}}@{{honotenant}}:{{honodevicepwd}}
 
@@ -547,10 +606,10 @@ Authorization: Basic {{honodevice}}@{{honotenant}}:{{honodevicepwd}}
 
 POST {{proto}}://{{hostname}}:{{httpadapterport}}/telemetry
 Content-Type: application/json
-Authorization: Basic nsp@joel:{{honodevicepwd}}
+Authorization: Basic aircraft@joel:{{honodevicepwd}}
 
 {
-  "topic": "org.fournier/nsp/things/twin/commands/modify",
+  "topic": "org.fournier/aircraft/things/twin/commands/modify",
   "headers": {},
   "path": "/features/telemetry/properties/altitude/value",
   "value": 3000
@@ -750,13 +809,13 @@ Content-Type: application/json
 
 POST {{proto}}://{{hostname}}:{{httpadapterport}}/telemetry
 Content-Type: application/json
-Authorization: Basic {{honodevice}}@{{honotenant}}:{{honodevicepwd}}
+Authorization: Basic aircraft@joel:{{honodevicepwd}}
 
 {
-  "topic": "abb/yumi/things/twin/commands/modify",
+  "topic": "org.fournier/rf4/things/twin/commands/modify",
   "headers": {},
-  "path": "/features/measurements/properties/di_Stop",
-  "di_Stop": false
+  "path": "/features/engine/properties/status/JoelTemp/value",
+  "value": 999
 }
 
 

@@ -1,8 +1,10 @@
 @proto = http
-@hostname = twinserver.kve.hs-mannheim.de 
+#@hostname = 141.19.44.65
+#@hostname = 192.168.203.10
+@hostname = twinserver.smartproduction.de
 @user = ditto
-@honodevice = test
-@honotenant = hallo
+@honodevice = A320
+@honotenant = airbus
 @honodevicepwd = flugzeug
 @pwd = ditto
 @port = 38080 
@@ -17,6 +19,12 @@
 ### HONO STUFF #########################################################################
 ########################################################################################
 ########################################################################################
+
+########################################################################################
+### CREATE A NEW TENANT "joel" #########################################################
+########################################################################################
+
+POST {{proto}}://{{hostname}}:28080/v1/tenants/{{honotenant}}
 
 ########################################################################################
 ### CREATE A NEW TENANT "joel" #########################################################
@@ -123,7 +131,7 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
 ### Tenant, Device and Credentials have to be provisioned previously in HONO ###########
 ########################################################################################
 
-POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity?timeout=8s
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
 Content-Type: application/json
 Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
 

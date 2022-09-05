@@ -1,5 +1,6 @@
 @proto = http
 @hostname = twinserver.kve.hs-mannheim.de 
+#@hostname = 192.168.203.10
 @dittoport = 38443
 @dittodevopsusr = devops
 @dittodevopspwd = foo
@@ -124,8 +125,15 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
   }
 }
 
+
+########################################################################################
+########################################################################################
+########################################################################################
 ########################################################################################
 ### Establish MQTT Connection Julian ###################################################
+########################################################################################
+########################################################################################
+########################################################################################
 ########################################################################################
 
 POST http://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
@@ -144,7 +152,7 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
             "connectionType": "mqtt",
             "connectionStatus": "open",
             "failoverEnabled": true,
-            "uri": "tcp://ditto:admin1234@mq.jreichwald.de:1883",
+            "uri": "tcp://ditto:admin1234@twinserver.kve.hs-mannheim.de:8883",
             "sources": [
               {
                 "addresses": [
@@ -231,7 +239,7 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
   },
   "piggybackCommand": {
     "type": "connectivity.commands:deleteConnection",
-    "connectionId": "rabbit-mq-connection-901-telemetry"
+    "connectionId": "rabbit-mq-connection-mqtt"
   }
 }
 

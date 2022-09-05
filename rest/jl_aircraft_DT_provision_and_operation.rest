@@ -1,5 +1,5 @@
 @proto = http
-@hostname = 141.19.44.65 
+@hostname = twinserver.smartproduction.de 
 @user = ditto
 @honodevice = rf4
 @org = org.fournier
