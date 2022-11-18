@@ -1,0 +1,65 @@
+Die Kommunikation läuft wie folgt ab:
+    - [1] Photometer published via MQTT Telemetrie an Ditto
+    - [2] Ditto subscribed und publisht die Werte formatiert weiter
+    - Node-Red subscribed die formatierten Werte und visualisiert sie
+
+    - [3] Node-Red sendet Befehle an Ditto via HTTP
+    - [4] Ditto subscribed und published die Befehle formatiert
+    - Photometer subscribed die formatierten Befehle und führt diese aus
+    - Evtl. Zusatz: Der Photometer gibt Rückmeldung an Ditto, dass er die Befehle ausgeführt hat
+
+
+[1] Photometer published via MQTT Telemetrie an Ditto:
+MQTT topic: cemos-ditto
+topic beschreibt das Gerät und den auszuführenden Ditto Befehl in folgender Form: namespace/device/dittobefehl also cemos/photometer1/things/twin/commands/modify
+property beschreibt den Pfad der jeweilig aktualisierten Komponente
+Der Payload muss diese Form haben:
+
+{
+    "topic": "cemos/photometertest1/things/twin/commands/modify",
+    "path": "/features/adc#1/properties/adc",
+    "value": {
+        "value": 200
+    }
+}
+
+
+[2] Ditto subscribed und publisht die Werte formatiert weiter
+MQTT topic: cemos-ditto/namespace:device/telemetry also cemos-ditto/cemos:photometer1/telemetry
+property beschreibt den Pfad der jeweilig aktualisierten Komponente
+Der Payload hat diese Form:
+
+{
+    "property":"/features/adc#1/properties/adc",
+    "value":
+    {
+        "value":200
+    }
+}
+
+
+[3] Node-Red sendet Befehle an Ditto via HTTP
+
+PUT http://141.19.44.61:30080/api/2/things/cemos:photometertest1/features/adc%231/properties/LED%231/inbox/messages/action
+Content-Type: application/json
+Authorization: Basic ditto:ditto
+
+{
+"active":true
+}
+
+
+[4] Ditto subscribed und published die Befehle formatiert
+MQTT topic: cemos-ditto/namespace:device/cmd also cemos-ditto/cemos:photometer1/cmd
+property beschreibt den Pfad der jeweilig aktualisierten Komponente
+
+{
+    "property":"/features/adc#1/properties/LED#1",
+    "value":
+    {
+        "active":true
+    }
+}
+
+
+

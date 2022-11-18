@@ -1,0 +1,178 @@
+{
+	"thingId": "cemos:photometer1",
+	"definition": "cemos:photometer1:0.1",
+	"policyId": "cemos:photometer1",
+
+	"attributes": {
+		"thingId": {
+			"rdf:type owl:NamedIndividual": "MeasurementResource",
+			"offersMeasurementService": "OpticalMeasurementService",
+			"hasMeasurementTarget": "SkinLikeLiquid",
+			"hasOutputMeasurementData": "DiscreteDataPoint",
+			"hasManufacturer": "CeMOS_Schorz",
+			"dataproperties": {
+				"model": "Photometer: Optical Measurement Device",
+				"location": "Mannheim University of Applied Sciences",
+				"institute": "Center for Mass Spectrometry and Optical Spectroscopy",
+				"building": "G"
+			},
+			"Sensors": {
+				"hasSensor": [{
+						"S1": {
+							"rdf:type owl:NamedIndividual": "Sensor",
+							"Signal": "synchronous",
+							"Wavelength": 300
+						}
+					},
+					{
+						"S2": {
+							"rdf:type owl:NamedIndividual": "Sensor",
+							"Signal": "synchronous",
+							"Wavelength": 350
+						}
+					},
+					{
+						"S3": {
+							"rdf:type owl:NamedIndividual": "Sensor",
+							"Signal": "synchronous",
+							"Wavelength": 400
+						}
+					},
+					{
+						"S4": {
+							"rdf:type owl:NamedIndividual": "Sensor",
+							"Signal": "synchronous",
+							"Wavelength": 450
+						}
+					}
+				]
+			}
+		}
+	},
+	"features": {
+		"LED1": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"assign": "adc1",
+				"wavelength": 300
+			}
+		},
+		"LED2": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"assign": "adc1",
+				"wavelength": 350
+			}
+		},
+		"LED3": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"assign": "adc1",
+				"wavelength": 400
+			}
+		},
+		"LED4": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"assign": "adc1",
+				"wavelength": 450
+			}
+		},
+		"LED5": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"assign": "adc1",
+				"wavelength": 500
+			}
+		},
+		"LED6": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"assign": "adc1",
+				"wavelength": 550
+			}
+		},
+		"adc1": {
+			"properties": {
+				"toggleLEDs": {
+					"active": false
+				},
+				"adcactive": {
+					"active": false
+				},
+				"adcintegration": {
+					"integrationtime": 10
+				},
+				"adcresolution": {
+					"resolutioncurrent": 5
+				},
+				"adc": {
+					"value": 0
+				}
+			}
+		},
+		"adc2": {
+			"properties": {
+				"toggleLEDs": {
+					"active": false
+				},
+				"adcactive": {
+					"active": false
+				},
+				"adcintegration": {
+					"integrationtime": 10
+				},
+				"adcresolution": {
+					"resolutioncurrent": 5
+				},
+				"adc": {
+					"value": 0
+				}
+			}
+		},
+		"adc3": {
+			"properties": {
+				"toggleLEDs": {
+					"active": false
+				},
+				"adcactive": {
+					"active": false
+				},
+				"adcintegration": {
+					"integrationtime": 10
+				},
+				"adcresolution": {
+					"resolutioncurrent": 5
+				},
+				"adc": {
+					"value": 0
+				}
+			}
+		},
+		"adc4": {
+			"properties": {
+				"toggleLEDs": {
+					"active": false
+				},
+				"adcactive": {
+					"active": false
+				},
+				"adcintegration": {
+					"integrationtime": 10
+				},
+				"adcresolution": {
+					"resolutioncurrent": 5
+				},
+				"adc": {
+					"value": 0
+				}
+			}
+		}
+	}
+}

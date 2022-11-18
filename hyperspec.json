@@ -1,0 +1,56 @@
+{
+	"thingId": "cemos:hyperspectralimager1",
+	"definition": "cemos:hyperspectralimager1:0.1",
+	"policyId": "cemos:hyperspectralimager1",
+
+	"attributes": {
+		"thingId": {
+			"rdf:type owl:NamedIndividual": "MeasurementResource",
+			"offersMeasurementService": "OpticalMeasurementService",
+			"hasMeasurementTarget": "MouseBrain",
+			"createsOutputMeasurementData": "HyperspectralImage",
+			"hasManufacturer": "CeMOS_Herdt",
+			"dataproperties": {
+				"model": "HyperspectralImager: Optical Measurement Device",
+				"location": "Mannheim University of Applied Sciences",
+				"institute": "Center for Mass Spectrometry and Optical Spectroscopy",
+				"building": "K"
+			},
+			"Sensors": {
+				"hasSensor": [{
+					"FL-400": {
+						"rdf:type owl:NamedIndividual": "Sensor",
+						"Signal": "asynchronous",
+						"wavelength": "450-750",
+						"Pixels": "2048x2048"
+					}
+				}]
+			}
+		}
+	},
+	"features": {
+		"sCMOS-cameraOrcaFlash4.0LT": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"assign": "adc1, adc2",
+				"wavelength": "450-750",
+				"Pixels": "2048x2048"
+			}
+		},
+		"LaserDiode": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"wavelength": 405
+			}
+		},
+		"LinearTranslationStage": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"TravelRange": 30
+			}
+		}
+	}
+}

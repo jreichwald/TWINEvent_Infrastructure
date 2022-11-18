@@ -1,0 +1,67 @@
+{
+	"thingId": "cemos:MIR-Scan-System1",
+	"definition": "cemos:MIR-Scan-System:0.1",
+	"policyId": "cemos:MIR-Scan-System1",
+
+	"attributes": {
+		"thingId": {
+			"rdf:type owl:NamedIndividual": "MeasurementResource",
+			"offersMeasurementService": "OpticalMeasurementService",
+			"hasMeasurementTarget": "MouseBrain",
+			"createsOutputMeasurementData": "HyperspectralImage",
+			"hasManufacturer": "CeMOS_Kuemmel",
+			"dataproperties": {
+				"model": "Photometer: Optical Measurement Device",
+				"location": "Mannheim University of Applied Sciences",
+				"institute": "Center for Mass Spectrometry and Optical Spectroscopy",
+				"building": "W"
+			},
+			"Sensors": {
+				"hasSensor": [{
+					"IR": {
+						"rdf:type owl:NamedIndividual": "Sensor",
+						"Signal": "asynchronous",
+						"Wavelength": "2500-5000"
+					}
+				}]
+			}
+		}
+	},
+	"features": {
+		"IRDetector": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"wavelength": "2500-5000"
+			}
+		},
+		"Laser1": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"wavelength": 3418
+			}
+		},
+		"Laser2": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"wavelength": 3584
+			}
+		},
+		"Laser3": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"wavelength": 2985
+			}
+		},
+		"Laser4": {
+			"properties": {
+				"available": false,
+				"active": false,
+				"wavelength": 2703
+			}
+		}
+	}
+}

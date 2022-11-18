@@ -57,6 +57,12 @@ function mapFromDittoProtocolMsg(
 // TELEMETRY
 function mapFromDittoProtocolMsg(_namespace,_name,group,channel,criterion,action,path,dittoHeaders,val,status,extra) {let headers=dittoHeaders; let textPayload=JSON.stringify({namespace: _namespace, device: _name, property: path, value: val,timestamp: Date.now()}); let bytePayload=null; let contentType='application/vnd.eclipse.ditto+json'; return Ditto.buildExternalMsg(headers,textPayload,bytePayload,contentType);}
 
+// CMD Schorz
+function mapFromDittoProtocolMsg(_namespace,_name,group,channel,criterion,action,path,dittoHeaders,val,status,extra) {if(path.includes('action')== false){let headers=dittoHeaders; let textPayload=JSON.stringify({property: path, value: val}); let bytePayload=null; let contentType='application/vnd.eclipse.ditto+json'; return Ditto.buildExternalMsg(headers,textPayload,bytePayload,contentType);}else {return 0}}
+
+// CMD Schorz
+function mapFromDittoProtocolMsg(_namespace,_name,group,channel,criterion,action,path,dittoHeaders,val,status,extra){if(path.includes('action')){let newpath=path.replace('/inbox/messages/action','');let headers=dittoHeaders; let textPayload=JSON.stringify({property: newpath, value: val}); let bytePayload=null; let contentType='application/vnd.eclipse.ditto+json';return Ditto.buildExternalMsg(headers,textPayload,bytePayload,contentType);}else {return 0}}
+
 // NEWTWIN
 function mapFromDittoProtocolMsg(_namespace,_name,group,channel,criterion,action,path,dittoHeaders,val,status,extra) {let headers=dittoHeaders; let textPayload=JSON.stringify({namespace: _namespace, device: _name, property: path, value: val,timestamp: Date.now()}); let bytePayload=null; let contentType='application/vnd.eclipse.ditto+json'; return Ditto.buildExternalMsg(headers,textPayload,bytePayload,contentType);}
 

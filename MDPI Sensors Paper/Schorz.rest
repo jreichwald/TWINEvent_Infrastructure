@@ -23,44 +23,134 @@
 ### Create Thing #######################################################################
 ########################################################################################
 
-PUT {{proto}}://{{hostname}}:{{port}}/api/2/things/cemos:optmeasurementdev1
+PUT {{proto}}://{{hostname}}:{{port}}/api/2/things/cemos:photometer1
 Content-Type: application/json
 Authorization: Basic {{user}}:{{pwd}}
 
 {
-  "thingId": "cemos:optmeasurementdev1",
-  "definition": "cemos:optmeasurementdev:0.1",
-  "attributes": {
-    "manufacturer": "ACME demo corp.",
-    "location": "Mannheim University of Applied Sciences",
-    "institute": "Center for Mass Spectrometry and Optical Spectroscopy",
-    "serialno": "1",
-    "model": "Optical Measurement Device"
-  },
-  "features": {
-    "coffee-brewer": {
-      "definition": [
-        "com.acme:coffeebrewer:0.1.0"
-      ],
-      "properties": {
-        "brewed-coffees": 0
-      }
-    },
-    "water-tank": {
-      "properties": {
-        "configuration": {
-          "smartMode": true,
-          "brewingTemp": 87,
-          "tempToHold": 44,
-          "timeoutSeconds": 6000
-        },
-        "status": {
-          "waterAmount": 731,
-          "temperature": 44
-        }
-      }
-    }
-  }
+	"thingId": "cemos:photometer1",
+	"definition": "cemos:photometer1:0.1",
+	"attributes": {
+		"manufacturer": "CeMOS",
+		"location": "Mannheim University of Applied Sciences",
+		"institute": "Center for Mass Spectrometry and Optical Spectroscopy",
+		"serialno": "1",
+		"model": "Photometer: Optical Measurement Device"
+	},
+	"features": {
+		"LED1": {
+			"available": false,
+			"active": false,
+			"assign":"adc1",
+			"wavelength": 300
+		},
+		"LED2": {
+			"available": false,
+			"active": false,
+			"assign":"adc1",
+			"wavelength": 350
+		},
+		"LED3": {
+			"available": false,
+			"active": false,
+			"assign":"adc1",
+			"wavelength": 400
+		},
+		"LED4": {
+			"available": false,
+			"active": false,
+			"assign":"adc1",
+			"wavelength": 450
+		},
+		"LED5": {
+			"available": false,
+			"active": false,
+			"assign":"adc1",
+			"wavelength": 500
+		},
+		"LED6": {
+			"available": false,
+			"active": false,
+			"assign":"adc1",
+			"wavelength": 550
+		},
+		"adc1": {
+			"properties": {
+				"toggleLEDs": {
+					"active": false
+				},
+				"adcactive": {
+					"active": false
+				},
+				"adcintegration": {
+					"integrationtime": 10
+				},
+				"adcresolution": {
+					"resolutioncurrent": 5
+				},
+				"adc": {
+					"value": 0
+				}
+			}
+		},
+		"adc2": {
+			"properties": {
+				"toggleLEDs": {
+					"active": false
+				},
+				"adcactive": {
+					"active": false
+				},
+				"adcintegration": {
+					"integrationtime": 10
+				},
+				"adcresolution": {
+					"resolutioncurrent": 5
+				},
+				"adc": {
+					"value": 0
+				}
+			}
+		},
+		"adc3": {
+			"properties": {
+				"toggleLEDs": {
+					"active": false
+				},
+				"adcactive": {
+					"active": false
+				},
+				"adcintegration": {
+					"integrationtime": 10
+				},
+				"adcresolution": {
+					"resolutioncurrent": 5
+				},
+				"adc": {
+					"value": 0
+				}
+			}
+		},
+		"adc4": {
+			"properties": {
+				"toggleLEDs": {
+					"active": false
+				},
+				"adcactive": {
+					"active": false
+				},
+				"adcintegration": {
+					"integrationtime": 10
+				},
+				"adcresolution": {
+					"resolutioncurrent": 5
+				},
+				"adc": {
+					"value": 0
+				}
+			}
+		}
+	}
 }
 
 ########################################################################################
@@ -91,16 +181,100 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
                 "filters": []
             }],
             "targets": [{
-                "address": "cemos-ditto/{{ thing:id }}",
+                "address": "cemos-ditto/{{ thing:id }}/telemetry",
                 "topics": [
-                "_/_/things/twin/events",
-                "_/_/things/live/messages"
+                "_/_/things/twin/events"
                 ],
                 "authorizationContext": ["nginx:ditto"],
                 "qos": 0
-            }]
+            }],
+            "mappingContext": {
+                "mappingEngine": "JavaScript",
+                "options": {
+                    "outgoingScript": "function mapFromDittoProtocolMsg(_namespace,_name,group,channel,criterion,command,path,dittoHeaders,val,status,extra) {if(path.includes('command')== false){let headers=dittoHeaders; let textPayload=JSON.stringify({property: path, value: val}); let bytePayload=null; let contentType='application/vnd.eclipse.ditto+json'; return Ditto.buildExternalMsg(headers,textPayload,bytePayload,contentType);}else {return 0}}"
+                }
+            }
         }
     }
+}
+
+### Delete Connection
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+  "targetActorSelection": "/system/sharding/connection",
+  "headers": {
+    "aggregate": false
+  },
+  "piggybackCommand": {
+    "type": "connectivity.commands:deleteConnection",
+    "connectionId": "mqtt-julian2"
+  }
+}
+
+########################################################################################
+### MQTT CMDs für Photometer ###########################################################
+########################################################################################
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity?timeout=10s
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+    "targetActorSelection": "/system/sharding/connection",
+    "headers": {
+    	"aggregate": false
+    },
+    "piggybackCommand": {
+        "type": "connectivity.commands:createConnection",
+        "connection": {
+            "id": "mqtt-julian4",
+            "connectionType": "mqtt",
+            "connectionStatus": "open",
+            "failoverEnabled": true,
+            "uri": "tcp://dbt:dbt@mq.jreichwald.de:1883",
+            "sources": [{
+                "addresses": ["cemos-ditto/#"],
+                "authorizationContext": ["nginx:ditto"],
+                "qos": 0,
+                "filters": []
+            }],
+            "targets": [{
+                "address": "cemos-ditto/{{ thing:id }}/cmd",
+                "topics": [
+                "_/_/things/twin/events"
+                ],
+                "authorizationContext": ["nginx:ditto"],
+                "qos": 0
+            }],
+            "mappingContext": {
+                "mappingEngine": "JavaScript",
+                "options": {
+                    "outgoingScript": "function mapFromDittoProtocolMsg(_namespace,_name,group,channel,criterion,command,path,dittoHeaders,val,status,extra){if(path.includes('command')){let newpath=path.replace('/inbox/messages/command','');let headers=dittoHeaders; let textPayload=JSON.stringify({property: newpath, value: val}); let bytePayload=null; let contentType='application/vnd.eclipse.ditto+json';return Ditto.buildExternalMsg(headers,textPayload,bytePayload,contentType);}else {return 0}}"
+                }
+            }
+        }
+    }
+}
+
+### Delete Connection
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+  "targetActorSelection": "/system/sharding/connection",
+  "headers": {
+    "aggregate": false
+  },
+  "piggybackCommand": {
+    "type": "connectivity.commands:deleteConnection",
+    "connectionId": "mqtt-julian4"
+  }
 }
 
 ########################################################################################
@@ -109,12 +283,11 @@ Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
 ########################################################################################
 
 {
-  "topic": "cemos/optmeasurementdev1/things/twin/commands/modify",
+  "topic": "cemos/photometertest1/things/twin/commands/modify",
   "headers": {},
-  "path": "/features/coffee-brewer/properties/brewed-coffees",
+  "path": "/features/adc#1/properties/adc",
   "value": {
-    "connected": true,
-    "brewed-coffees": 60
+    "value": 100
   }
 }
 
@@ -141,7 +314,17 @@ Authorization: Basic {{user}}:{{pwd}}
 ### In Topic: cemos-ditto/cemos:optmeasurementdev1 #####################################
 ########################################################################################
 
-POST {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/cemos:optmeasurementdev1/inbox/messages/ask
+POST {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/cemos:photometer1/inbox/messages/ask.question?timeout=0
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pwd}}
+
+{
+"test":"CMD"
+}
+
+###
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/cemos:photometer1/inbox/messages/command.question?timeout=0
 Content-Type: application/json
 Authorization: Basic {{user}}:{{pwd}}
 
@@ -154,12 +337,44 @@ Authorization: Basic {{user}}:{{pwd}}
 ### In Topic: cemos-ditto/cemos:optmeasurementdev1 #####################################
 ########################################################################################
 
-POST {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/cemos:optmeasurementdev1/features/water-tank/inbox/messages/action
+PUT {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/cemos:photometer1/features/commands/inbox/messages/action
 Content-Type: application/json
 Authorization: Basic {{user}}:{{pwd}}
 
 {
-"test":"HEAT"
+  "LED1assign":"adc1"
+}
+
+########################################################################################
+### Sending a Command to a specific feature ############################################
+### In Topic: cemos-ditto/cemos:optmeasurementdev1 #####################################
+########################################################################################
+
+POST> {{proto}}://{{hostname}}:{{dittoport}}/api/2/things/cemos:photometer1/inbox/messages/action
+Content-Type: application/json
+Authorization: Basic {{user}}:{{pwd}}
+
+{
+  "LED1assign":"adc1"
+}
+
+
+########################################################################################
+### DISCOVBER ALL CONNECTIONS IDs ######################################################
+########################################################################################
+
+POST {{proto}}://{{hostname}}:{{dittoport}}/devops/piggyback/connectivity
+Content-Type: application/json
+Authorization: Basic {{dittodevopsusr}}:{{dittodevopspwd}}
+
+{
+  "targetActorSelection": "/user/connectivityRoot/connectionIdsRetrieval/singleton",
+  "headers": {
+    "aggregate": false
+  },
+  "piggybackCommand": {
+    "type": "connectivity.commands:retrieveAllConnectionIds"
+  }
 }
 
 ########################################################################################
